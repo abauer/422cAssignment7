@@ -72,7 +72,7 @@ public class Client extends Application {
 		try { 
 			// Create a socket to connect to the server 
 			@SuppressWarnings("resource")
-			Socket socket = new Socket("localhost", 8000); 
+			Socket socket = new Socket("192.168.0.9", 8000);
 			// Socket socket = new Socket("130.254.204.36", 8000); 
 			// Socket socket = new Socket("drake.Armstrong.edu", 8000); 
 
