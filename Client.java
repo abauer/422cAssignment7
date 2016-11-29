@@ -10,7 +10,6 @@ import java.util.stream.Stream;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -19,6 +18,7 @@ import javafx.scene.control.*;
 
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
@@ -31,6 +31,8 @@ import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 
+import javax.swing.text.html.*;
+
 
 public class Client extends Application {
 	// IO streams 
@@ -39,6 +41,10 @@ public class Client extends Application {
     Thread recieve;
     ServerRecieve sa;
 	int userId;
+
+    Label currentChat;
+    ListView<Label> chatMessages;
+
     ArrayList<Contact> groups;
     ContactList<Contact> groupsView;
     ArrayList<Contact> onlineFriends;
@@ -224,16 +230,15 @@ public class Client extends Application {
         //TODO request lists from server instead of hardcode
         //get online people / friends
         groups = new ArrayList<>();
-        groups.add(new Contact("Senior Design",true)); groups.add(new Contact("HackDFW",true)); groups.add(new Contact("Frist Allo",true));
+        groups.add(new Contact("Senior Design",true,this)); groups.add(new Contact("HackDFW",true,this)); groups.add(new Contact("Frist Allo",true,this));
 
         onlineFriends = new ArrayList<>();
-        onlineFriends.add(new Contact("Grant",true));
-
+        onlineFriends.add(new Contact("Grant",true,this));
         offlineFriends = new ArrayList<>();
-        offlineFriends.add(new Contact("Rony",true));
+        offlineFriends.add(new Contact("Rony",true,this));
 
         onlineStrangers = new ArrayList<>();
-        onlineStrangers.add(new Contact("BruceBanner",false)); onlineStrangers.add(new Contact("BilboBaggins",false));
+        onlineStrangers.add(new Contact("BruceBanner",false,this)); onlineStrangers.add(new Contact("BilboBaggins",false,this));
         //finish TODO
         Stage chatStage = new Stage();
 
@@ -280,8 +285,15 @@ public class Client extends Application {
         chat.setPadding(new Insets(5));
         chatPane.setCenter(chat);
 
-        ListView<Label> messages = new ListView<>();
-        chat.setCenter(messages);
+        HBox chatTop = new HBox();
+        chatTop.setSpacing(5);
+        Label chatName = new Label("Chat name: ");
+        currentChat = new Label("");
+        chatTop.getChildren().addAll(chatName,currentChat);
+        chat.setTop(chatTop);
+
+        chatMessages = new ListView<>();
+        chat.setCenter(chatMessages);
 
         HBox sendMessageBox = new HBox();
         sendMessageBox.setPadding(new Insets(10,0,0,0));
@@ -297,6 +309,10 @@ public class Client extends Application {
         chatPane.layoutBoundsProperty().addListener((observable, oldValue, newValue) -> {
             System.out.println("h: "+newValue.getHeight()+" w: "+newValue.getWidth());
         });
+        //TODO REMOVE HARDCODE
+        onlineFriends.get(0).appendChat("[GRANT] Hey Anthony, can you ...");
+        onlineFriends.get(0).appendChat("[ANTHONY] What do you need Grant, id be happy to help!");
+
 
         // Create a scene and place it in the stage
         Scene s = new Scene(chatPane,650,500);
@@ -363,6 +379,9 @@ class Contact extends BorderPane{
     Shape unfriend;
     HBox left;
     HBox right;
+    Client owner;
+
+    List<String> chatHistory;
 
     public Contact(String name){
         super();
@@ -372,11 +391,13 @@ class Contact extends BorderPane{
         nameBox.getChildren().add(this.name);
         nameBox.setPadding(new Insets(0,0,0,5));
         setCenter(nameBox);
+        chatHistory = new ArrayList<>();
     }
 
-    public Contact(String name, boolean friend){
+    public Contact(String name, boolean friend, Client c){
         this(name);
         this.friend = friend;
+        owner = c;
 
         left = new HBox();
         left.setSpacing(5);
@@ -403,13 +424,29 @@ class Contact extends BorderPane{
         right.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
             //TODO UNFRIEND/ADDFRIEND
             System.out.println("unfriend was clicked");
-            toggleUnread();
+            setUnread(!unread);
             event.consume();
         });
         addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
-            //TODO OPEN CHAT
-            System.out.println("i was clicked: i am "+myself.name.getText());
+            setActiveChat();
         });
+    }
+
+    public void appendChat(String s){
+        if(!owner.currentChat.getText().equals(name.getText()))
+            setUnread(true);
+        chatHistory.add(s);
+    }
+
+    public void setChatHistory(List<String> s){
+        chatHistory = s;
+    }
+
+    public void setActiveChat(){
+        if(unread)
+            setUnread(false);
+        owner.currentChat.setText(name.getText());
+        owner.chatMessages.setItems(FXCollections.observableList(chatHistory.stream().map(s->new Label(s)).collect(Collectors.toList())));
     }
 
     public void setFriend(boolean friend){
@@ -418,8 +455,8 @@ class Contact extends BorderPane{
         recompileHBox();
     }
 
-    public void toggleUnread() {
-        unread = !unread;
+    public void setUnread(boolean unread) {
+        this.unread = unread;
         recompileHBox();
     }
 
