@@ -2,7 +2,10 @@ package assignment7;
 
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -13,7 +16,10 @@ import javafx.stage.Stage;
 
 public class MultiThreadServer extends Application
 { // Text area for displaying contents 
-	private TextArea ta = new TextArea(); 
+	private TextArea ta = new TextArea();
+
+    // open sockets
+    private final ArrayList<Socket> openSockets = new ArrayList<>();
 
 	// Number a client 
 	private int clientNo = 0; 
@@ -27,14 +33,32 @@ public class MultiThreadServer extends Application
 		primaryStage.show(); // Display the stage 
 
 		new Thread( () -> { 
-			try {  // Create a server socket 
-				ServerSocket serverSocket = new ServerSocket(8000); 
-				ta.appendText("MultiThreadServer started at " 
-						+ new Date() + '\n'); 
+			try {  // Create a server socket
+				ServerSocket serverSocket = new ServerSocket(8000);
+				ta.appendText("MultiThreadServer started at IP " + Inet4Address.getLocalHost().getHostAddress() + '\n');
 
+                new Thread( () -> {
+                    while (true) {
+                        System.out.println("Threads alive: "+openSockets.size());
+                        // TODO currently unnecessary, as sockets are manually removed from this list
+                        synchronized(openSockets) {
+                            Iterator<Socket> iter = openSockets.iterator();
+                            while (iter.hasNext()) {
+                                Socket socket = iter.next();
+                                if (socket.isClosed()) {
+                                    iter.remove();
+                                    System.out.println("EXECUTED");
+                                }
+                            }
+                        }
+                        try {
+                            Thread.sleep(1000);
+                        } catch (Exception e) {}
+                    }
+                }).start();
 
 				while (true) { 
-					// Listen for a new connection request 
+					// Listen for a new connection request
 					Socket socket = serverSocket.accept(); 
 
 					// Increment clientNo 
@@ -52,9 +76,11 @@ public class MultiThreadServer extends Application
 						ta.appendText("Client " + clientNo + "'s IP Address is " 
 								+ inetAddress.getHostAddress() + "\n");	}); 
 
-
 					// Create and start a new thread for the connection
 					new Thread(new HandleAClient(socket)).start();
+                    synchronized(openSockets) {
+                        openSockets.add(socket);
+                    }
 				} 
 			} 
 			catch(IOException ex) { 
@@ -93,7 +119,9 @@ public class MultiThreadServer extends Application
 					});
 				}
 			} catch(IOException e) {
-				e.printStackTrace();
+                synchronized (openSockets) {
+                    openSockets.remove(socket);
+                }
 			}
 		}
 	}
