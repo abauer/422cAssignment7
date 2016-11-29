@@ -11,13 +11,15 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 
-
 public class MultiThreadServer extends Application {
 	private TextArea ta = new TextArea(); // Text area for displaying contents
 	private final Map<Integer, ChatSession> sessions = new HashMap<>();
 
 	// Number a client 
-	private int clientNo = 0; 
+	private int clientNo = 0;
+
+    // Maintain list of open sockets
+    private final List<Socket> openSockets = new ArrayList<>();
 
 	@Override // Override the start method in the Application class 
 	public void start(Stage primaryStage) { 
@@ -49,7 +51,7 @@ public class MultiThreadServer extends Application {
 						ta.appendText("Client " + clientNo + "'s host name is "
 								+ inetAddress.getHostName() + "\n");
 						ta.appendText("Client " + clientNo + "'s IP Address is " 
-								+ inetAddress.getHostAddress() + "\n");	}); 
+								+ inetAddress.getHostAddress() + "\n");	});
 
 					// Create and start a new thread for the connection
 					new Thread(new ClientHandler(socket)).start();
@@ -59,7 +61,7 @@ public class MultiThreadServer extends Application {
 				} 
 			} 
 			catch(IOException ex) { 
-				System.err.println(ex);
+				ex.printStackTrace();
 			}
 		}).start();
 	}
@@ -78,11 +80,20 @@ public class MultiThreadServer extends Application {
 				// Create data input and output streams
 				DataInputStream inputFromClient = new DataInputStream( socket.getInputStream());
 				DataOutputStream outputToClient = new DataOutputStream( socket.getOutputStream());
+                // Wait for username/password
+                int clientId = -1;
+                while (clientId == -1) {
+                    String username = inputFromClient.readUTF();
+                    String password = inputFromClient.readUTF();
+                    clientId = DatabaseServer.login(username, password);
+                    outputToClient.writeInt(clientId);
+                }
 				// Continuously serve the client
 				while (true) { 
+                    // TODO: PUT STUFF HERE
+
 					// Receive radius from the client 
 					double radius = inputFromClient.readDouble();
-
 					// Compute area
 					double area = radius * radius * Math.PI; 
 					// Send area back to the client

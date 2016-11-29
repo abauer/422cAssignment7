@@ -3,6 +3,7 @@ package assignment7;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -10,16 +11,15 @@ import java.net.URLEncoder;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-
 public class DatabaseAccessor {
     private static final String DATABASE_URL = "http://www.grantuy.com/422c/project7.php";
     private static final String DELIMITER_REGEX = "\n";
 
-    public static Integer intQuery(Map<String,Object> params) {
+    public static int intQuery(Map<String,Object> params) {
         try {
             return Integer.parseInt(query(params));
         } catch (Exception e) {
-            return null;
+            return -1;
         }
     }
 
@@ -30,7 +30,7 @@ public class DatabaseAccessor {
                     .boxed()
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            return null;
+            return new ArrayList<>();
         }
     }
 
@@ -38,7 +38,7 @@ public class DatabaseAccessor {
         try {
             return query(params);
         } catch (Exception e) {
-            return null;
+            return "";
         }
     }
 
@@ -46,7 +46,7 @@ public class DatabaseAccessor {
         try {
             return Arrays.asList(query(params).split(DELIMITER_REGEX));
         } catch (Exception e) {
-            return null;
+            return new ArrayList<>();
         }
     }
 
