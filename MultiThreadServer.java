@@ -83,26 +83,49 @@ public class MultiThreadServer extends Application {
                 // Wait for username/password
                 int clientId = -1;
                 while (clientId == -1) {
-                    String username = inputFromClient.readUTF();
-                    String password = inputFromClient.readUTF();
-                    clientId = DatabaseServer.login(username, password);
+					String[] login = Parser.parseString(inputFromClient.readUTF());
+                    switch(ClientAction.valueOf(login[1])) {
+						case LOGIN: clientId = DatabaseServer.login(login[1], login[2]); break;
+						case REGISTER: clientId = DatabaseServer.register(login[1], login[2]); break;
+					}
                     outputToClient.writeInt(clientId);
                 }
 				// Continuously serve the client
 				while (true) {
-                    // TODO: PUT STUFF HERE
+					String[] action = Parser.parseString(inputFromClient.readUTF());
+                    int result;
+                    String response;
+                    List<String> responses;
+					switch ((ClientAction.valueOf(action[0]))){
+                        case UPDATEPASSWORD:
+                            result = DatabaseServer.updatePassword(clientId,action[1],action[2]);
+                            outputToClient.writeChars(Parser.packageStrings(ServerAction.UPDATEPASSWORDRESULT,result));
+                            break;
+                        case SENDMESSAGE:
+                            response = DatabaseServer.sendMessage(clientId,action[1],action[2]);
+                            outputToClient.writeChars(Parser.packageStrings(ServerAction.MESSAGESENT,response));
+                            break;
+                        case GETFRIENDS:
+                            responses = DatabaseServer.getFriends(clientId);
+                            outputToClient.writeChars(Parser.packageStrings(ServerAction.FRIENDS,responses));
+                            break;
+                        case GETOFFLINEFRIENDS:
 
-					// Receive radius from the client 
-					double radius = inputFromClient.readDouble();
-					// Compute area
-					double area = radius * radius * Math.PI; 
-					// Send area back to the client
-					outputToClient.writeDouble(area);
-					Platform.runLater(() -> { 
-						ta.appendText("radius received from client: " +
-								radius + '\n'); 
-						ta.appendText("Area found: " + area + '\n');
-					});
+                            break;
+                        case GETSTRANGERS:
+
+                            break;
+                        case MAKECHAT:
+
+                            break;
+                        case ADDFRIEND:
+
+                            break;
+                        case REMOVEFRIEND:
+
+                            break;
+					}
+					//outputToClient.writeDouble(area);
 				}
 			} catch(IOException e) {
                 synchronized (openSockets) {
