@@ -3,6 +3,7 @@ package assignment7;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class DatabaseServer {
     public static int login(String username, String password) {
@@ -30,22 +31,22 @@ public class DatabaseServer {
         return DatabaseAccessor.intQuery(params);
     }
 
-    public static String sendGroupMessage(int client, int groupId, String message){
+    public static int sendGroupMessage(int client, int groupId, String message){
         Map<String,Object> params = new HashMap<>();
         params.put("type", "send_group_message");
         params.put("groupid", groupId);
         params.put("clientid", client);
         params.put("message", message);
-        return DatabaseAccessor.strQuery(params);
+        return DatabaseAccessor.intQuery(params);
     }
 
-    public static String sendMessage(int client, String username, String message){
+    public static int sendMessage(int client, String username, String message){
         Map<String,Object> params = new HashMap<>();
         params.put("type", "send_message");
         params.put("recipient", username);
         params.put("clientid", client);
         params.put("message", message);
-        return DatabaseAccessor.strQuery(params);
+        return DatabaseAccessor.intQuery(params);
     }
 
     public static List<String> getFriends(int client){
@@ -55,26 +56,43 @@ public class DatabaseServer {
         return DatabaseAccessor.strListQuery(params);
     }
 
-    //not done
     public static int makeChat(int client,List<String> friends){
         Map<String,Object> params = new HashMap<>();
-        params.put("type", "get_friends");
+        params.put("type", "make_chat");
         params.put("clientid", client);
+        params.put("groupmembers",friends.stream().collect(Collectors.joining(",")));
         return DatabaseAccessor.intQuery(params);
     }
 
     public static int addFriend(int client,String username){
         Map<String,Object> params = new HashMap<>();
-        params.put("type", "get_friends");
+        params.put("type", "add_friend");
         params.put("clientid", client);
+        params.put("username", username);
         return DatabaseAccessor.intQuery(params);
     }
 
     public static int removeFriend(int client,String username){
         Map<String,Object> params = new HashMap<>();
-        params.put("type", "get_friends");
+        params.put("type", "remove_friend");
         params.put("clientid", client);
+        params.put("username", username);
         return DatabaseAccessor.intQuery(params);
     }
 
+    public static List<String> getMessageHistory(int client,String username){
+        Map<String,Object> params = new HashMap<>();
+        params.put("type", "get_message_history");
+        params.put("clientid", client);
+        params.put("username", username);
+        return DatabaseAccessor.strListQuery(params);
+    }
+
+    public static List<String> getGroupMessageHistory(int client,int groupId){
+        Map<String,Object> params = new HashMap<>();
+        params.put("type", "get_message_history");
+        params.put("clientid", client);
+        params.put("groupid", groupId);
+        return DatabaseAccessor.strListQuery(params);
+    }
 }
