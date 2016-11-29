@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -28,6 +29,8 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
+
+import javax.swing.event.ChangeEvent;
 
 
 public class Client extends Application {
@@ -149,10 +152,15 @@ public class Client extends Application {
         Label groupLabel = new Label("Friends");
         List<Contact> compiled = Stream.concat(onlineFriends.stream(),offlineFriends.stream()).map(c -> new Contact(c.toString())).collect(Collectors.toList());
         ContactList<Contact> items = new ContactList<>(compiled);
+        ContactList<Contact> includes = new ContactList<>();
         friends.getChildren().addAll(groupLabel,items);
 
         //mouse handler
-        // TODO update list
+
+        items.getSelectionModel().selectionModeProperty().removeListener(items.listener);
+        items.getSelectionModel().selectedIndexProperty().addListener(e -> swapLists(items,includes));
+        includes.getSelectionModel().selectionModeProperty().removeListener(includes.listener);
+        includes.getSelectionModel().selectedIndexProperty().addListener(e -> swapLists(includes,items));
 
         //In Group - Center
         VBox included = new VBox();
@@ -160,7 +168,6 @@ public class Client extends Application {
         groupPane.setCenter(included);
 
         Label includedLabel = new Label("Included");
-        ContactList<Contact> includes = new ContactList<>();
         included.getChildren().addAll(includedLabel,includes);
 
         //Finish - Bottom
@@ -170,6 +177,7 @@ public class Client extends Application {
         Button createGroup = new Button("Finish");
         createGroup.setOnAction(event -> {
             //TODO send Server action
+            //TODO check there are people in group
             groupStage.hide();
         });
         createGroup.setAlignment(Pos.BOTTOM_CENTER);
@@ -181,6 +189,17 @@ public class Client extends Application {
         groupStage.setTitle("Create Group"); // Set the stage title
         groupStage.setScene(scene); // Place the scene in the stage
         groupStage.show(); // Display the stage
+    }
+
+    private void swapLists(ContactList<Contact> first, ContactList<Contact> second){
+        List<Contact> selectList = first.getSelectionModel().getSelectedItems();
+        if(selectList.size() > 0) {
+            final Contact selected = selectList.get(0);
+            if (selected != null) {
+                second.addItem(selected);
+                Platform.runLater(() -> first.removeItem(selected));
+            }
+        }
     }
 
 	private void openChat(){
@@ -439,10 +458,12 @@ class ServerRecieve implements Runnable {
 
 class ContactList<E> extends ListView<E> {
 
+    ChangeListener listener;
+
     public ContactList(){
         super();
-        ContactList<E> myself = this;
-        myself.getSelectionModel().selectedIndexProperty().addListener(e -> Platform.runLater(() -> myself.getSelectionModel().select(-1)));
+        listener = (a,b,c) -> Platform.runLater(() -> getSelectionModel().select(-1));
+        getSelectionModel().selectedIndexProperty().addListener(listener);
     }
 
     public ContactList(List<E> items){
