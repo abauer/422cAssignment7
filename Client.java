@@ -105,7 +105,9 @@ public class Client extends Application {
 			boolean success = connectToServer(ipField.getText(),statusLabel);
 			if(!success)
 				return;
-			loginToServer(ClientAction.REGISTER,usernameField.getText(),passwordField.getText());
+			success = loginToServer(ClientAction.REGISTER,usernameField.getText(),passwordField.getText());
+            if(!success)
+                return;
             openChat();
 			loginStage.close();
 		});
@@ -114,7 +116,9 @@ public class Client extends Application {
 	//		boolean success = connectToServer(ipField.getText(),statusLabel);
 	//		if(!success)
 	//			return;
-	//		loginToServer(ClientAction.LOGIN,usernameField.getText(),passwordField.getText());
+	//		success = loginToServer(ClientAction.LOGIN,usernameField.getText(),passwordField.getText());
+    //      if(!success)
+    //          return;
             openChat();
 			loginStage.close();
 		});
@@ -156,7 +160,6 @@ public class Client extends Application {
         friends.getChildren().addAll(groupLabel,items);
 
         //mouse handler
-
         items.getSelectionModel().selectionModeProperty().removeListener(items.listener);
         items.getSelectionModel().selectedIndexProperty().addListener(e -> swapLists(items,includes));
         includes.getSelectionModel().selectionModeProperty().removeListener(includes.listener);
@@ -308,7 +311,7 @@ public class Client extends Application {
 		return true;
 	}
 
-	private void loginToServer(ClientAction clientaction,String user, String pass){
+	private boolean loginToServer(ClientAction clientaction,String user, String pass){
 		try {
 			// create query
 			String query = clientaction + " " + user + " " + pass;
@@ -319,14 +322,17 @@ public class Client extends Application {
 
 			//wait for response
 			userId = fromServer.readInt();
-
+            if(userId==-1)
+                return false;
             //setup new Thread to recieve from Server
             sa = new ServerRecieve(fromServer);
             recieve = new Thread(sa);
             recieve.start();
+            return true;
 		} catch (IOException ex){
 			ex.printStackTrace();
 		}
+		return false;
 	}
 
 	public static void main(String[] args) {
