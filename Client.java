@@ -101,7 +101,7 @@ public class Client extends Application {
 			loginStage.close();
 		});
 		Button loginButton = new Button("Login");
-		registerButton.setOnAction(e -> {
+		loginButton.setOnAction(e -> {
 	//		boolean success = connectToServer(ipField.getText(),statusLabel);
 	//		if(!success)
 	//			return;
