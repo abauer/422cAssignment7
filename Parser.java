@@ -23,7 +23,7 @@ public class Parser {
 
     public static String[] parseString(String str) {
         return Stream.of(str.split("(?<!~)\\s")) // negative lookbehind
-                .map(s -> s.replace("~ ", " ")) // strip escape characters
+                .map(s -> s.replaceAll("~ ", " ")) // strip escape characters
                 .toArray(String[]::new);
     }
 }
