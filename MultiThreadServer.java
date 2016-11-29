@@ -89,6 +89,8 @@ public class MultiThreadServer extends Application {
 						case REGISTER: clientId = DatabaseServer.register(login[1], login[2]); break;
 					}
                     outputToClient.writeInt(clientId);
+                    //TODO update list of people online
+                    //TODO update all other sockets with this list
                 }
 				// Continuously serve the client
 				while (true) {
@@ -147,6 +149,8 @@ public class MultiThreadServer extends Application {
 			} catch(IOException e) {
                 synchronized (openSockets) {
                     openSockets.remove(socket);
+                    //TODO update list of people online
+                    //TODO update all other sockets with this list
                 }
 			}
 		}

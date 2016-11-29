@@ -143,10 +143,14 @@ public class Client extends Application {
         //Group Name - Top
         HBox nameBox = new HBox();
         nameBox.setPadding(new Insets(0,0,5,0));
-        nameBox.setAlignment(Pos.BOTTOM_CENTER);
-        Label title = new Label("Create a Group");
-        title.setAlignment(Pos.BOTTOM_CENTER);
-        nameBox.getChildren().add(title);
+        nameBox.setSpacing(5);
+        nameBox.setAlignment(Pos.CENTER_LEFT);
+        Label nameLabel = new Label("Group Name:");
+        nameLabel.setAlignment(Pos.CENTER_LEFT);
+        TextField nameField = new TextField();
+        addTextLimiter(nameField,32);
+        HBox.setHgrow(nameField,Priority.ALWAYS);
+        nameBox.getChildren().addAll(nameLabel,nameField);
         groupPane.setTop(nameBox);
         //Friends - Left
         VBox friends = new VBox();
