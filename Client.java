@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -29,8 +30,6 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
-
-import javax.swing.event.ChangeEvent;
 
 
 public class Client extends Application {
@@ -76,6 +75,7 @@ public class Client extends Application {
 
 		Label usernameLabel = new Label("Username: ");
 		TextField usernameField = new TextField("demo");    //TODO REMOVE
+        addTextLimiter(usernameField,15);
 		usernameBox.getChildren().addAll(usernameLabel,usernameField);
 
 		loginBox.getChildren().add(usernameBox);
@@ -86,6 +86,7 @@ public class Client extends Application {
 
 		Label passwordLabel = new Label("Password: ");
 		PasswordField passwordField = new PasswordField();
+        addTextLimiter(passwordField,15);
 		passwordField.setText("grantisawesome");    //TODO REMOVE
 		passwordBox.getChildren().addAll(passwordLabel,passwordField);
 
@@ -205,6 +206,15 @@ public class Client extends Application {
         }
     }
 
+    public static void addTextLimiter(final TextField tf, final int maxLength) {
+        tf.textProperty().addListener((ov, oldValue, newValue) -> {
+            if (tf.getText().length() > maxLength) {
+                String s = tf.getText().substring(0, maxLength);
+                tf.setText(s);
+            }
+        });
+    }
+
 	private void openChat(){
 
         //TODO request lists from server instead of hardcode
@@ -314,8 +324,7 @@ public class Client extends Application {
 	private boolean loginToServer(ClientAction clientaction,String user, String pass){
 		try {
 			// create query
-			String query = clientaction + " " + user + " " + pass;
-
+			String query = Parser.packageStrings(clientaction,user,pass);
 			//send server register
 			toServer.writeChars(query);
 			toServer.flush();
