@@ -89,7 +89,7 @@ public class MultiThreadServer extends Application {
                     outputToClient.writeInt(clientId);
                 }
 				// Continuously serve the client
-				while (true) { 
+				while (true) {
                     // TODO: PUT STUFF HERE
 
 					// Receive radius from the client 
