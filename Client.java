@@ -11,6 +11,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -20,6 +21,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -40,6 +43,7 @@ public class Client extends Application {
 	int clientId;
 
     Label currentChat;
+    Contact currentContact;
     ListView<Label> chatMessages;
 
     ArrayList<Contact> groups;
@@ -279,9 +283,27 @@ public class Client extends Application {
 
 	private void openChat(){
 
+        prepWaitForServer(ServerAction.GROUPS);
+        String query = Parser.packageStrings(ClientAction.GETGROUPS);
+        sendQuery(query);
+        waitForServer(ServerAction.GROUPS);
 
+        prepWaitForServer(ServerAction.FRIENDS);
+        query = Parser.packageStrings(ClientAction.GETFRIENDS);
+        sendQuery(query);
+        waitForServer(ServerAction.FRIENDS);
 
-        //TODO request lists from server instead of hardcode
+        prepWaitForServer(ServerAction.OFFLINEFRIENDS);
+        query = Parser.packageStrings(ClientAction.GETOFFLINEFRIENDS);
+        sendQuery(query);
+        waitForServer(ServerAction.OFFLINEFRIENDS);
+
+        prepWaitForServer(ServerAction.STRANGERS);
+        query = Parser.packageStrings(ClientAction.GETSTRANGERS);
+        sendQuery(query);
+        waitForServer(ServerAction.STRANGERS);
+
+        //TODO create contacts in the serverresponse handler
         //get online people / friends
         groups = new ArrayList<>();
         groups.add(new Contact("Senior Design",true,this)); groups.add(new Contact("HackDFW",true,this)); groups.add(new Contact("Frist Allo",true,this));
@@ -360,6 +382,12 @@ public class Client extends Application {
 
         TextField sendMessageField = new TextField();
         Button sendMessageButton = new Button("Send");
+        sendMessageField.addEventFilter(KeyEvent.KEY_PRESSED, keyEvent -> {
+            if(keyEvent.getCode()== KeyCode.ENTER){
+                submitMessage(sendMessageField.getText());
+            }
+        });
+        sendMessageButton.setOnAction(event -> submitMessage(sendMessageField.getText()));
         sendMessageBox.getChildren().addAll(sendMessageField,sendMessageButton);
         HBox.setHgrow(sendMessageField, Priority.ALWAYS);
         chat.setBottom(sendMessageBox);
@@ -378,6 +406,10 @@ public class Client extends Application {
         chatStage.setTitle("Chat Window"); // Set the stage title
         chatStage.setScene(s); // Place the scene in the stage
         chatStage.show(); // Display the stage
+    }
+
+    private void submitMessage(String message){
+        currentContact.submitMessage(message);
     }
 
 	private boolean connectToServer(String ip,Label statusLabel) {
@@ -412,7 +444,7 @@ public class Client extends Application {
             if(clientId==-1)
                 return false;
             //setup new Thread to recieve from Server
-            sa = new ServerRecieve(fromServer);
+            sa = new ServerRecieve(this,fromServer);
             recieve = new Thread(sa);
             recieve.start();
             return true;
@@ -431,6 +463,16 @@ public class Client extends Application {
         }
     }
 
+    boolean flags[] = new boolean[ServerAction.values().length];
+
+    public void prepWaitForServer(ServerAction sa){
+        flags[sa.ordinal()] = true;
+    }
+
+    public void waitForServer(ServerAction sa){
+        while(flags[sa.ordinal()]){}
+    }
+
 	public static void main(String[] args) {
 		launch(args);
 	}
@@ -439,8 +481,10 @@ public class Client extends Application {
 class ServerRecieve implements Runnable {
 
     DataInputStream fromServer;
+    Client owner;
 
-    public ServerRecieve(DataInputStream fs){
+    public ServerRecieve(Client c, DataInputStream fs){
+        owner = c;
         fromServer = fs;
     }
 
@@ -449,7 +493,16 @@ class ServerRecieve implements Runnable {
         while(true){
             try {
                 String server_response = fromServer.readUTF();
+                //TODO PARSE fromServer and get ServerAction perfromed
+                ServerAction sa = ServerAction.GROUPS;  //EXAMPLE
+                owner.flags[sa.ordinal()]=false;    //set flag for blocking
                 //parse server response
+                switch(sa){  //TODO
+                    case GROUPS:
+                        break;
+                    case GROUPMESSAGEHISTORY:
+                        break;
+                }
             }
             catch (IOException ex){
                 ex.printStackTrace();

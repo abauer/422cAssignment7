@@ -116,10 +116,14 @@ public class MultiThreadServer extends Application {
                             outputToClient.writeChars(Parser.packageStrings(ServerAction.FRIENDS,responses));
                             break;
                         case GETOFFLINEFRIENDS:
-
+                            //TODO Using list of sockets/clientids get offlinefriends
+                            responses = new ArrayList<>();
+                            outputToClient.writeChars(Parser.packageStrings(ServerAction.OFFLINEFRIENDS,responses));
                             break;
-                        case GETSTRANGERS: //remove self
-
+                        case GETSTRANGERS: //remove self (clientId)
+                            //TODO remove self, using list of sockets/clientids get strangers
+                            responses = new ArrayList<>();
+                            outputToClient.writeChars(Parser.packageStrings(ServerAction.STRANGERS,responses));
                             break;
                         case MAKECHAT:
                             List<String> members = Arrays.asList(action);
