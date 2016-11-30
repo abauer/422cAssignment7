@@ -104,4 +104,11 @@ public class DatabaseServer {
         params.put("groupid", groupId);
         return DatabaseAccessor.intQuery(params);
     }
+
+    public static List<String> getGroups(int client){
+        Map<String,Object> params = new HashMap<>();
+        params.put("type", "get_groups");
+        params.put("clientid", client);
+        return DatabaseAccessor.strListQuery(params);
+    }
 }

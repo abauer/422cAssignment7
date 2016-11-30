@@ -147,6 +147,10 @@ public class MultiThreadServer extends Application {
                             result = DatabaseServer.leaveGroup(clientId,Integer.parseInt(action[1]));
                             outputToClient.writeChars(Parser.packageStrings(ServerAction.LEFTGROUP,result));
                             break;
+                        case GETGROUPS:
+                            responses = DatabaseServer.getGroups(clientId);
+                            outputToClient.writeChars(Parser.packageStrings(ServerAction.GROUPS,responses));
+                            break;
 					}
 					//outputToClient.writeDouble(area);
 				}
