@@ -26,7 +26,7 @@ public class Parser {
                 .map(s -> s.replaceAll("~ ", " ")) // strip escape characters
                 .toArray(String[]::new);
     }
-    
+
     public static String cleanString(String str) {
         return str.replaceAll("[^A-Za-z0-9_ ]","");
     }
