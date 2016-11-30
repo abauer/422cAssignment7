@@ -96,4 +96,12 @@ public class DatabaseServer {
         params.put("groupid", groupId);
         return DatabaseAccessor.strListQuery(params);
     }
+
+    public static int leaveGroup(int client, int groupId){
+        Map<String,Object> params = new HashMap<>();
+        params.put("type", "leave_group");
+        params.put("clientid", client);
+        params.put("groupid", groupId);
+        return DatabaseAccessor.intQuery(params);
+    }
 }

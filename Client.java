@@ -11,7 +11,6 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -21,7 +20,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -33,16 +31,13 @@ import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 
-import javax.swing.text.html.*;
-
-
 public class Client extends Application {
 	// IO streams 
 	DataOutputStream toServer = null; 
 	DataInputStream fromServer = null;
     Thread recieve;
     ServerRecieve sa;
-	int userId;
+	int clientId;
 
     Label currentChat;
     ListView<Label> chatMessages;
@@ -180,7 +175,8 @@ public class Client extends Application {
 
         Button confirmButton = new Button("Confrim");
         confirmButton.setOnAction(e -> {
-
+            String query = Parser.packageStrings(ClientAction.UPDATEPASSWORD,currentField.getText(),newField.getText());
+            sendQuery(query);
             passwordStage.close();
         });
         submitBox.getChildren().add(confirmButton);
@@ -243,8 +239,11 @@ public class Client extends Application {
         createBox.setAlignment(Pos.BOTTOM_CENTER);
         Button createGroup = new Button("Finish");
         createGroup.setOnAction(event -> {
-            //TODO send Server action
-            //TODO check there are people in group
+            List<Contact> inGroup = new ArrayList(includes.getItems());
+            if(inGroup.size()>0) {
+                String query = Parser.packageStrings(ClientAction.MAKECHAT,nameField.getText(),inGroup);
+                sendQuery(query);
+            }
             groupStage.hide();
         });
         createGroup.setAlignment(Pos.BOTTOM_CENTER);
@@ -280,6 +279,8 @@ public class Client extends Application {
 
 	private void openChat(){
 
+
+
         //TODO request lists from server instead of hardcode
         //get online people / friends
         groups = new ArrayList<>();
@@ -292,7 +293,7 @@ public class Client extends Application {
 
         onlineStrangers = new ArrayList<>();
         onlineStrangers.add(new Contact("BruceBanner",false,this)); onlineStrangers.add(new Contact("BilboBaggins",false,this));
-        //finish TODO
+        //finish remove TODO
         Stage chatStage = new Stage();
 
         BorderPane chatPane = new BorderPane();
@@ -404,12 +405,11 @@ public class Client extends Application {
 			// create query
 			String query = Parser.packageStrings(clientaction,user,pass);
 			//send server register
-			toServer.writeChars(query);
-			toServer.flush();
+			sendQuery(query);
 
 			//wait for response
-			userId = fromServer.readInt();
-            if(userId==-1)
+			clientId = fromServer.readInt();
+            if(clientId==-1)
                 return false;
             //setup new Thread to recieve from Server
             sa = new ServerRecieve(fromServer);
@@ -421,6 +421,15 @@ public class Client extends Application {
 		}
 		return false;
 	}
+
+	public void sendQuery(String q){
+        try{
+            toServer.writeChars(q);
+            toServer.flush();
+        } catch (IOException ex){
+            ex.printStackTrace();
+        }
+    }
 
 	public static void main(String[] args) {
 		launch(args);
@@ -478,11 +487,15 @@ class Contact extends BorderPane{
     }
 
     private void setHandlers(){
-        Contact myself = this;
         right.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
-            //TODO UNFRIEND/ADDFRIEND
-            System.out.println("unfriend was clicked");
-            setUnread(!unread);
+            if(friend){
+                String query = Parser.packageStrings(ClientAction.REMOVEFRIEND,name.getText());
+                owner.sendQuery(query);
+            }
+            else{
+                String query = Parser.packageStrings(ClientAction.ADDFRIEND,name.getText());
+                owner.sendQuery(query);
+            }
             event.consume();
         });
         addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {

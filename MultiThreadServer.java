@@ -123,7 +123,7 @@ public class MultiThreadServer extends Application {
                             break;
                         case MAKECHAT:
                             List<String> members = Arrays.asList(action);
-                            members.remove(0); members.remove(0);
+                            members.remove(0); members.remove(0);   //ClientAction, groupName
                             result = DatabaseServer.makeChat(clientId,action[1],members);
                             outputToClient.writeChars(Parser.packageStrings(ServerAction.MAKEGROUP,result));
                             break;
@@ -142,6 +142,10 @@ public class MultiThreadServer extends Application {
                         case GETGROUPMESSAGEHISTORY:
                             responses = DatabaseServer.getGroupMessageHistory(clientId,Integer.parseInt(action[1]));
                             outputToClient.writeChars(Parser.packageStrings(ServerAction.GROUPMESSAGEHISTORY,responses));
+                            break;
+                        case LEAVEGROUP:
+                            result = DatabaseServer.leaveGroup(clientId,Integer.parseInt(action[1]));
+                            outputToClient.writeChars(Parser.packageStrings(ServerAction.LEFTGROUP,result));
                             break;
 					}
 					//outputToClient.writeDouble(area);
