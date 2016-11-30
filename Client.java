@@ -11,6 +11,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -20,6 +21,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -112,7 +114,7 @@ public class Client extends Application {
 			boolean success = connectToServer(ipField.getText(),statusLabel);
 			if(!success)
 				return;
-			success = loginToServer(ClientAction.REGISTER,usernameField.getText(),passwordField.getText());
+			success = loginToServer(ClientAction.REGISTER,Parser.cleanString(usernameField.getText()),passwordField.getText());
             if(!success)
                 return;
             openChat();
@@ -123,7 +125,7 @@ public class Client extends Application {
 	//		boolean success = connectToServer(ipField.getText(),statusLabel);
 	//		if(!success)
 	//			return;
-	//		success = loginToServer(ClientAction.LOGIN,usernameField.getText(),passwordField.getText());
+	//		success = loginToServer(ClientAction.LOGIN,Parser.cleanString(usernameField.getText()),passwordField.getText());
     //      if(!success)
     //          return;
             openChat();
@@ -141,6 +143,57 @@ public class Client extends Application {
 		loginStage.setScene(scene); // Place the scene in the stage
 		loginStage.show(); // Display the stage
 	}
+
+	private void openPassword(){
+        Stage passwordStage = new Stage();
+        BorderPane passPane = new BorderPane();
+        passPane.setPadding(new Insets(10));
+
+        VBox passBox = new VBox();
+        passBox.setSpacing(10);
+        passBox.setAlignment(Pos.CENTER);
+
+        HBox currentBox = new HBox();
+        currentBox.setSpacing(10);
+        currentBox.setAlignment(Pos.CENTER);
+
+        Label currentLabel = new Label("Current Pass: ");
+        PasswordField currentField = new PasswordField();
+        addTextLimiter(currentField,15);
+        currentBox.getChildren().addAll(currentLabel,currentField);
+
+        passBox.getChildren().add(currentBox);
+
+        HBox newBox = new HBox();
+        newBox.setSpacing(10);
+        newBox.setAlignment(Pos.CENTER);
+
+        Label newLabel = new Label("New Pass: ");
+        PasswordField newField = new PasswordField();
+        addTextLimiter(newField,15);
+        newBox.getChildren().addAll(newLabel,newField);
+
+        passBox.getChildren().add(newBox);
+
+        HBox submitBox = new HBox();
+        submitBox.setAlignment(Pos.CENTER);
+
+        Button confirmButton = new Button("Confrim");
+        confirmButton.setOnAction(e -> {
+
+            passwordStage.close();
+        });
+        submitBox.getChildren().add(confirmButton);
+
+        passBox.getChildren().add(submitBox);
+
+        passPane.setCenter(passBox);
+
+        Scene scene = new Scene(passPane);
+        passwordStage.setTitle("Change Password"); // Set the stage title
+        passwordStage.setScene(scene); // Place the scene in the stage
+        passwordStage.show(); // Display the stage
+    }
 
 	private void openAddGroup(){
         Stage groupStage = new Stage();
@@ -285,12 +338,17 @@ public class Client extends Application {
         chat.setPadding(new Insets(5));
         chatPane.setCenter(chat);
 
-        HBox chatTop = new HBox();
-        chatTop.setSpacing(5);
+        BorderPane chatTop = new BorderPane();
+        HBox chatNameBox = new HBox();
+        chatNameBox.setSpacing(5);
         Label chatName = new Label("Chat name: ");
         currentChat = new Label("");
-        chatTop.getChildren().addAll(chatName,currentChat);
+        chatNameBox.getChildren().addAll(chatName,currentChat);
+        chatTop.setLeft(chatNameBox);
         chat.setTop(chatTop);
+        Button changePassword = new Button("Update Password");
+        chatTop.setRight(changePassword);
+        changePassword.setOnAction(event -> openPassword());
 
         chatMessages = new ListView<>();
         chat.setCenter(chatMessages);

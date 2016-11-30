@@ -123,8 +123,8 @@ public class MultiThreadServer extends Application {
                             break;
                         case MAKECHAT:
                             List<String> members = Arrays.asList(action);
-                            members.remove(0);
-                            result = DatabaseServer.makeChat(clientId,members);
+                            members.remove(0); members.remove(0);
+                            result = DatabaseServer.makeChat(clientId,action[1],members);
                             outputToClient.writeChars(Parser.packageStrings(ServerAction.MAKEGROUP,result));
                             break;
                         case ADDFRIEND:

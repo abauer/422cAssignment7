@@ -56,10 +56,11 @@ public class DatabaseServer {
         return DatabaseAccessor.strListQuery(params);
     }
 
-    public static int makeChat(int client,List<String> friends){
+    public static int makeChat(int client,String groupName, List<String> friends){
         Map<String,Object> params = new HashMap<>();
         params.put("type", "make_chat");
         params.put("clientid", client);
+        params.put("groupname",groupName);
         params.put("groupmembers",friends.stream().collect(Collectors.joining(",")));
         return DatabaseAccessor.intQuery(params);
     }
@@ -90,7 +91,7 @@ public class DatabaseServer {
 
     public static List<String> getGroupMessageHistory(int client,int groupId){
         Map<String,Object> params = new HashMap<>();
-        params.put("type", "get_message_history");
+        params.put("type", "get_group_message_history");
         params.put("clientid", client);
         params.put("groupid", groupId);
         return DatabaseAccessor.strListQuery(params);
