@@ -6,12 +6,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -23,15 +21,12 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polygon;
-import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 
 public class Client extends Application {
@@ -48,11 +43,11 @@ public class Client extends Application {
 
     HashMap<Integer,Contact> groups;
     ContactList<Contact> groupsView;
-    List<Contact> onlineFriends;
+    HashMap<String,Contact> onlineFriends;
     ContactList<Contact> onlineFriendsView;
-    List<Contact> offlineFriends;
+    HashMap<String,Contact> offlineFriends;
     ContactList<Contact> offlineFriendsView;
-    List<Contact> onlineStrangers;
+    HashMap<String,Contact> onlineStrangers;
     ContactList<Contact> onlineStrangersView;
 
 
@@ -218,7 +213,7 @@ public class Client extends Application {
         groupPane.setLeft(friends);
 
         Label groupLabel = new Label("Friends");
-        List<Contact> compiled = Stream.concat(onlineFriends.stream(),offlineFriends.stream()).map(c -> new Contact(c.toString())).collect(Collectors.toList());
+        List<Contact> compiled = Stream.concat(onlineFriends.values().stream(),offlineFriends.values().stream()).map(c -> new Contact(c.toString())).collect(Collectors.toList());
         ContactList<Contact> items = new ContactList<>(compiled);
         ContactList<Contact> includes = new ContactList<>();
         friends.getChildren().addAll(groupLabel,items);
@@ -308,13 +303,13 @@ public class Client extends Application {
         groups = new HashMap<>();
         groups.put(1,new Contact("Senior Design",true,this)); groups.put(2,new Contact("HackDFW",true,this)); groups.put(3,new Contact("Frist Allo",true,this));
 
-        onlineFriends = new ArrayList<>();
-        onlineFriends.add(new Contact("Grant",true,this));
-        offlineFriends = new ArrayList<>();
-        offlineFriends.add(new Contact("Rony",true,this));
+        onlineFriends = new HashMap<>();
+        onlineFriends.put("Grant",new Contact("Grant",true,this));
+        offlineFriends = new HashMap<>();
+        offlineFriends.put("Rony",new Contact("Rony",true,this));
 
-        onlineStrangers = new ArrayList<>();
-        onlineStrangers.add(new Contact("BruceBanner",false,this)); onlineStrangers.add(new Contact("BilboBaggins",false,this));
+        onlineStrangers = new HashMap<>();
+        onlineStrangers.put("BruceBanner",new Contact("BruceBanner",false,this)); onlineStrangers.put("BilboBaggins",new Contact("BilboBaggins",false,this));
         //finish remove TODO
         Stage chatStage = new Stage();
 
@@ -337,23 +332,23 @@ public class Client extends Application {
         groupTitle.setLeft(groupLabelAlign);
         groupTitle.setRight(addGroupButton);
         friends.getChildren().add(groupTitle);
-        groupsView = new ContactList<>(new ArrayList(groups.values()));
+        groupsView = new ContactList<>(groups.values());
         friends.getChildren().add(groupsView);
 
 
         Label onlineFriendsLabel = new Label("Online Friends");
         friends.getChildren().add(onlineFriendsLabel);
-        onlineFriendsView = new ContactList<>(onlineFriends);
+        onlineFriendsView = new ContactList<>(onlineFriends.values());
         friends.getChildren().add(onlineFriendsView);
 
         Label offlineFriendsLabel = new Label("Offline Friends");
         friends.getChildren().add(offlineFriendsLabel);
-        offlineFriendsView = new ContactList<>(offlineFriends);
+        offlineFriendsView = new ContactList<>(offlineFriends.values());
         friends.getChildren().add(offlineFriendsView);
 
         Label strangerLabel = new Label("Strangers");
         friends.getChildren().add(strangerLabel);
-        onlineStrangersView = new ContactList<>(onlineStrangers);
+        onlineStrangersView = new ContactList<>(onlineStrangers.values());
         friends.getChildren().add(onlineStrangersView);
 
         //Chat - Right
@@ -511,31 +506,29 @@ class ServerRecieve implements Runnable {
                     case LOGINSUCCESS:
                         owner.clientId = Integer.parseInt(action[1]);
                         break;
-                    case FRIENDADDED:
-                    case FRIENDREMOVED: //TODO check w/grant if server already sends us this information
-                        owner.sendQuery(Parser.packageStrings(ClientAction.GETFRIENDS));
-                        owner.sendQuery(Parser.packageStrings(ClientAction.GETSTRANGERS));
-                        break;
                     case FRIENDS:
                         messages = Arrays.asList(action);
                         messages.remove(0);   //ServerAction,
-                        owner.onlineFriends=messages.stream().map(s -> new Contact(s,true,owner)).collect(Collectors.toList());
-                        owner.updateContactList(owner.onlineFriendsView,owner.onlineFriends);
-                        //TODO GET MESSAGE HISTORY
+                        HashMap<String,Contact> friends = new HashMap<>();
+                        messages.forEach(s -> friends.put(s, new Contact(s, true, owner)));
+                        owner.updateContactList(owner.onlineFriendsView,friends.values());
+                        friends.forEach((s,c) -> owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,s)));
                         break;
                     case OFFLINEFRIENDS:
                         messages = Arrays.asList(action);
                         messages.remove(0);   //ServerAction,
-                        owner.offlineFriends=messages.stream().map(s -> new Contact(s,true,owner)).collect(Collectors.toList());
-                        owner.updateContactList(owner.offlineFriendsView,owner.offlineFriends);
-                        //TODO GET MESSAGE HISTORY
+                        HashMap<String,Contact> offlineFriends = new HashMap<>();
+                        messages.forEach(s -> offlineFriends.put(s, new Contact(s, true, owner)));
+                        owner.updateContactList(owner.offlineFriendsView,offlineFriends.values());
+                        offlineFriends.forEach((s,c) -> owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,s)));
                         break;
                     case STRANGERS:
                         messages = Arrays.asList(action);
                         messages.remove(0);   //ServerAction,
-                        owner.onlineStrangers=messages.stream().map(s -> new Contact(s,false,owner)).collect(Collectors.toList());
-                        owner.updateContactList(owner.onlineStrangersView,owner.onlineStrangers);
-                        //TODO GET MESSAGE HISTORY
+                        HashMap<String,Contact> strangers = new HashMap<>();
+                        messages.forEach(s -> strangers.put(s, new Contact(s, true, owner)));
+                        owner.updateContactList(owner.onlineStrangersView,strangers.values());
+                        strangers.forEach((s,c) -> owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,s)));
                         break;
                     case GROUPS:
                         messages = Arrays.asList(action);
@@ -547,14 +540,7 @@ class ServerRecieve implements Runnable {
                         }
                         owner.groups = groups;
                         owner.updateContactList(owner.groupsView,owner.groups.values());
-                        //TODO GET MESSAGE HISTORY
-                        break;
-                    case GROUPMESSAGESENT: //TODO check w/grant if server already sends us this information
-                        owner.sendQuery(Parser.packageStrings(ClientAction.GETGROUPMESSAGEHISTORY,action[1]));
-                        break;
-                    case LEFTGROUP: //TODO check w/grant if server already sends us this information
-                    case MAKEGROUP:
-                        owner.sendQuery(Parser.packageStrings(ClientAction.GETGROUPS));
+                        groups.forEach((i,c) -> owner.sendQuery(Parser.packageStrings(ClientAction.GETGROUPMESSAGEHISTORY,i)));
                         break;
                     case MESSAGEHISTORY:
                         messages = Arrays.asList(action);
@@ -562,14 +548,6 @@ class ServerRecieve implements Runnable {
                         //action[1] is username
                         //TODO find user, add message
                         break;
-                    case MESSAGESENT: //TODO check w/grant if server already sends us this information
-                        owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,action[1]));
-                        break;
-
-
-                    case UPDATEPASSWORDRESULT:
-                        break;
-
                     case GROUPMESSAGEHISTORY:
                         groupId = Integer.parseInt(action[1]);
                         messages = Arrays.asList(action);
@@ -595,7 +573,7 @@ class ContactList<E> extends ListView<E> {
         getSelectionModel().selectedIndexProperty().addListener(listener);
     }
 
-    public ContactList(List<E> items){
+    public ContactList(Collection<E> items){
         this();
         setList(items);
     }
