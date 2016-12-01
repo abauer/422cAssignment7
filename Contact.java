@@ -112,7 +112,6 @@ public class Contact extends BorderPane {
     }
 
     public void setChatHistory(List<String> s){
-        System.out.println("setting chat history to "+s.size());
         chatHistory = s;
     }
 
@@ -120,10 +119,8 @@ public class Contact extends BorderPane {
         if(unread)
             setUnread(false);
         owner.currentChat.setText(name.getText());
-        System.out.println("active chat was set to "+name.getText());
         owner.currentContact = this;
         owner.chatMessages.setItems(FXCollections.observableList(chatHistory.stream().map(s->new Label(s)).collect(Collectors.toList())));
-        System.out.println("there are "+chatHistory.size()+" previosu messages");
     }
 
     public void setFriend(boolean friend){
