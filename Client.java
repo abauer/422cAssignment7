@@ -552,7 +552,10 @@ class ServerRecieve implements Runnable {
                         messages = new ArrayList<>(Arrays.asList(action));
                         messages.remove(0);   //ServerAction,
                         HashMap<String,Contact> strangers = new HashMap<>();
-                        messages.forEach(s -> strangers.put(s, new Contact(s, false, owner)));
+                        messages.forEach(s -> {
+                            if(!owner.onlineFriends.containsKey(s)&&!owner.offlineFriends.containsKey(s))
+                                strangers.put(s, new Contact(s, false, owner));
+                        });
                         owner.onlineStrangers = strangers;
                         owner.updateContactList(owner.onlineStrangersView,strangers.values());
                         strangers.forEach((s,c) -> owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,s)));
@@ -673,7 +676,7 @@ class ContactList<E> extends ListView<E> {
     }
 
     public void setList(Collection<E> items){
-        setItems(FXCollections.observableArrayList(items));
+        Platform.runLater(() -> setItems(FXCollections.observableArrayList(items)));
     }
 
     public void removeItem(E item){
