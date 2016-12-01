@@ -536,6 +536,7 @@ class ServerRecieve implements Runnable {
                         HashMap<String,Contact> friends = new HashMap<>();
                         messages.forEach(s -> friends.put(s, new Contact(s, true, owner)));
                         owner.updateContactList(owner.onlineFriendsView,friends.values());
+                        owner.onlineFriends = friends;
                         friends.forEach((s,c) -> owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,s)));
                         break;
                     case OFFLINEFRIENDS:
@@ -544,6 +545,7 @@ class ServerRecieve implements Runnable {
                         HashMap<String,Contact> offlineFriends = new HashMap<>();
                         messages.forEach(s -> offlineFriends.put(s, new Contact(s, true, owner)));
                         owner.updateContactList(owner.offlineFriendsView,offlineFriends.values());
+                        owner.offlineFriends = offlineFriends;
                         offlineFriends.forEach((s,c) -> owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,s)));
                         break;
                     case STRANGERS:
@@ -551,6 +553,7 @@ class ServerRecieve implements Runnable {
                         messages.remove(0);   //ServerAction,
                         HashMap<String,Contact> strangers = new HashMap<>();
                         messages.forEach(s -> strangers.put(s, new Contact(s, false, owner)));
+                        owner.onlineStrangers = strangers;
                         owner.updateContactList(owner.onlineStrangersView,strangers.values());
                         strangers.forEach((s,c) -> owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,s)));
                         break;
@@ -570,15 +573,22 @@ class ServerRecieve implements Runnable {
                         messages = new ArrayList<>(Arrays.asList(action));
                         messages.remove(0); messages.remove(0);   //ServerAction, username
                         Contact c;
+                        System.out.println(messages.size()+" in history");
+                        System.out.println(owner.onlineStrangers.size()+" strangers");
                         if(owner.onlineFriends.containsKey(action[1])){
                             c = owner.onlineFriends.get(action[1]);
+                            System.out.println("is a friend");
                             c.setChatHistory(messages);
                         } else if(owner.offlineFriends.containsKey(action[1])){
                             c = owner.offlineFriends.get(action[1]);
+                            System.out.println("is offline");
                             c.setChatHistory(messages);
                         } else if(owner.onlineStrangers.containsKey(action[1])){
                             c = owner.onlineStrangers.get(action[1]);
+                            System.out.println("is a stranger");
                             c.setChatHistory(messages);
+                        } else{
+                            System.out.println("not found");
                         }
                         break;
                     case GROUPMESSAGEHISTORY:
