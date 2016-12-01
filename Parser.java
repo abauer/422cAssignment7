@@ -23,18 +23,16 @@ public class Parser {
 
     public static String packageStrings(List<Object> list) {
         return list.stream()
-                .map(o -> ((o instanceof List) ? ((List)o).stream().collect(Collectors.joining(",")) : o))
-                .map(Object::toString)
-                .map(Parser::escapeString)
+                .map(o -> ((o instanceof List) ? ((List)o).stream().map(e -> escapeString(e.toString())).collect(Collectors.joining(" ")).toString() : escapeString(o.toString())))
                 .collect(Collectors.joining(" "));
     }
 
     public static String escapeString(String str) {
-        return str.replaceAll("\\s", "~ "); // escape with tilde
+        return str.replaceAll(" ", "~ "); // escape with tilde
     }
 
     public static String[] parseString(String str) {
-        return Stream.of(str.split("(?<!~)\\s")) // negative lookbehind
+        return Stream.of(str.split("(?<!~) ")) // negative lookbehind
                 .map(s -> s.replaceAll("~ ", " ")) // strip escape characters
                 .toArray(String[]::new);
     }

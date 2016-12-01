@@ -174,7 +174,7 @@ public class MultiThreadServer extends Application {
                                     .collect(Collectors.toList());
                             writeToClient(Parser.packageStrings(ServerAction.OFFLINEFRIENDS,responses));
                             break;
-                        case GETSTRANGERS: //remove self (clientId)
+                        case GETSTRANGERS: //TODO remove friends
                             responses = activeClients.stream()
                                     .filter(Client::isActive)
                                     .map(Client::getName)
@@ -189,16 +189,17 @@ public class MultiThreadServer extends Application {
                             //writeToClient(Parser.packageStrings(ServerAction.MAKEGROUP,result));
                             break;
                         case ADDFRIEND:
-                            response = DatabaseServer.addFriend(clientId,action[1]);
-                            tokens = Parser.parseString(response);
-                            if (tokens[0].equals("1")) {
-                                String msg = String.format("%s sent %s a friend request.", client.getName().toUpperCase(), action[1].toUpperCase());
-                                chatState.triggerUpdate(client.getName(), Parser.packageStrings(ServerAction.NEWMESSAGE, action[1], msg));
-                                chatState.triggerUpdate(action[1], Parser.packageStrings(ServerAction.NEWMESSAGE, client.getName(), msg));
-                            } else if (tokens[0].equals("2")) {
-                                String msg = String.format("%s accepted %s's friend request.", client.getName().toUpperCase(), action[1].toUpperCase());
-                                chatState.triggerUpdate(client.getName(), Parser.packageStrings(ServerAction.NEWMESSAGE, action[1], msg));
-                                chatState.triggerUpdate(action[1], Parser.packageStrings(ServerAction.NEWMESSAGE, client.getName(), msg));
+                            responses = DatabaseServer.addFriend(clientId,action[1]);
+                            if (responses.size() > 1) {
+                                if (responses.get(0).equals("1")) {
+                                    String msg = String.format("%s sent %s a friend request.", client.getName().toUpperCase(), action[1].toUpperCase());
+                                    chatState.triggerUpdate(client.getName(), Parser.packageStrings(ServerAction.NEWMESSAGE, action[1], msg));
+                                    chatState.triggerUpdate(action[1], Parser.packageStrings(ServerAction.NEWMESSAGE, client.getName(), msg));
+                                } else if (responses.get(0).equals("2")) {
+                                    String msg = String.format("%s accepted %s's friend request.", client.getName().toUpperCase(), action[1].toUpperCase());
+                                    chatState.triggerUpdate(client.getName(), Parser.packageStrings(ServerAction.NEWMESSAGE, action[1], msg));
+                                    chatState.triggerUpdate(action[1], Parser.packageStrings(ServerAction.NEWMESSAGE, client.getName(), msg));
+                                }
                             }
                             //writeToClient(Parser.packageStrings(ServerAction.FRIENDADDED,result));
                             break;
@@ -220,9 +221,9 @@ public class MultiThreadServer extends Application {
                             break;
                         case GETGROUPS:
                             responses = DatabaseServer.getGroups(clientId);
-                            for (int i=0; i<responses.size(); i+=2) {
-                                chatState.addGroupAssoc(clientId, Integer.parseInt(responses.get(i)));
-                            }
+                            if (responses.size() > 1)
+                                for (int i=0; i<responses.size(); i+=2)
+                                    chatState.addGroupAssoc(clientId, Integer.parseInt(responses.get(i)));
                             writeToClient(Parser.packageStrings(ServerAction.GROUPS,responses));
                             break;
 					}
