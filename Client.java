@@ -536,9 +536,7 @@ class ServerRecieve implements Runnable {
                         break;
                     case GROUPS:
                         messages = new ArrayList<>(Arrays.asList(action));
-                        messages.stream().forEachOrdered(System.out::println);
                         messages.remove(0);   //ServerAction,
-                        System.out.println(messages.size());
                         HashMap<Integer,Contact> groups = new HashMap<>();
                         for (int i = 0; i<messages.size(); i+=2) {
                             groupId = Integer.parseInt(messages.get(i+1));
