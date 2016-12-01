@@ -72,9 +72,9 @@ public class DatabaseAccessor {
     private static String encodeParams(Map<String,Object> params) {
         StringBuilder result = new StringBuilder("?");
         for (Map.Entry<String,Object> entry : params.entrySet()) {
-            result.append(String.format("&%s=%s", URLEncode(entry.getKey()), URLEncode(entry.getValue().toString())));
+            result.append(String.format("%s=%s&", URLEncode(entry.getKey()), URLEncode(entry.getValue().toString())));
         }
-        return result.toString();
+        return result.substring(0, result.length()-1);
     }
 
     private static String URLEncode(String str) {
