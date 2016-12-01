@@ -54,7 +54,9 @@ public class DatabaseAccessor {
     private static String query(Map<String,Object> params) throws Exception {
         BufferedReader reader = null;
         try {
-            URL url = new URL(DATABASE_URL+encodeParams(params));
+            String urlStr = DATABASE_URL+encodeParams(params);
+            URL url = new URL(urlStr);
+            System.out.println(urlStr);
             reader = new BufferedReader(new InputStreamReader(url.openStream()));
             StringBuffer buffer = new StringBuffer();
             int read;

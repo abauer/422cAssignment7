@@ -13,13 +13,14 @@ import javafx.stage.Stage;
 
 public class MultiThreadServer extends Application {
 	private TextArea ta = new TextArea(); // Text area for displaying contents
-	private final Map<Integer, ChatSession> sessions = new HashMap<>();
 
 	// Number a client 
 	private int clientNo = 0;
 
     // Maintain list of open sockets
-    private final List<Socket> openSockets = new ArrayList<>();
+    private final List<Client> activeClients = new ArrayList<>();
+
+    private final ChatState chatState = new ChatState();
 
 	@Override // Override the start method in the Application class 
 	public void start(Stage primaryStage) { 
@@ -54,9 +55,10 @@ public class MultiThreadServer extends Application {
 								+ inetAddress.getHostAddress() + "\n");	});
 
 					// Create and start a new thread for the connection
-					new Thread(new ClientHandler(socket)).start();
-                    synchronized(openSockets) {
-                        openSockets.add(socket);
+                    Client client = new Client(socket);
+					new Thread(new ClientHandler(client)).start();
+                    synchronized(activeClients) {
+                        activeClients.add(client);
                     }
 				} 
 			} 
@@ -69,32 +71,38 @@ public class MultiThreadServer extends Application {
 
 	// Define the thread class for handling
 	private class ClientHandler implements Runnable {
-		private Socket socket; // A connected socket
+		private Client client; // contains socket
 		/** Construct a thread */ 
-		public ClientHandler(Socket socket) {
-			this.socket = socket;
+		public ClientHandler(Client client) {
+			this.client = client;
 		}
+
 		/** Run a thread */
 		public void run() { 
 			try {
 				// Create data input and output streams
-				DataInputStream inputFromClient = new DataInputStream( socket.getInputStream());
-				DataOutputStream outputToClient = new DataOutputStream( socket.getOutputStream());
+				BufferedReader inputFromClient = new BufferedReader(new InputStreamReader( client.getSocket().getInputStream()));
+				DataOutputStream outputToClient = new DataOutputStream( client.getSocket().getOutputStream());
                 // Wait for username/password
                 int clientId = -1;
                 while (clientId == -1) {
-					String[] login = Parser.parseString(inputFromClient.readUTF());
-                    switch(ClientAction.valueOf(login[1])) {
+                    System.out.println("Starting loop");
+                    String line = inputFromClient.readLine().trim();
+                    System.out.println(line);
+                    String[] login = Parser.parseString(line);
+                    System.out.println(Arrays.toString(login));
+                    switch(ClientAction.valueOf(login[0])) {
 						case LOGIN: clientId = DatabaseServer.login(login[1], login[2]); break;
 						case REGISTER: clientId = DatabaseServer.register(login[1], login[2]); break;
 					}
-                    outputToClient.writeChars(Parser.packageStrings(ServerAction.LOGINSUCCESS,clientId));
+                    outputToClient.writeUTF(Parser.packageStrings(ServerAction.LOGINSUCCESS,clientId)+'\n');
+                    client.setId(clientId);
                     //TODO update list of people online
                     //TODO update all other sockets with this list
                 }
 				// Continuously serve the client
 				while (true) {
-					String[] action = Parser.parseString(inputFromClient.readUTF());
+					String[] action = Parser.parseString(inputFromClient.readLine());
                     int result;
                     String response;
                     List<String> responses;
@@ -109,6 +117,7 @@ public class MultiThreadServer extends Application {
                             break;
                         case SENDMESSAGE:
                             result = DatabaseServer.sendMessage(clientId,action[1],action[2]);
+                            chatState.triggerUpdate(result, Parser.packageStrings(ServerAction.NEWMESSAGE, action[1], action[2]));
                             //outputToClient.writeChars(Parser.packageStrings(ServerAction.MESSAGESENT,result));
                             break;
                         case GETFRIENDS:
@@ -161,8 +170,8 @@ public class MultiThreadServer extends Application {
 					//outputToClient.writeDouble(area);
 				}
 			} catch(IOException e) {
-                synchronized (openSockets) {
-                    openSockets.remove(socket);
+                synchronized (activeClients) {
+                    activeClients.remove(client);
                     //TODO update list of people online
                     //TODO update all other sockets with this list
                 }
@@ -170,14 +179,53 @@ public class MultiThreadServer extends Application {
 		}
 	}
 
-	private class ChatSession extends Observable {
+	private class Client implements Observer {
+        private int id = 0;
+        private Socket socket;
+        DataOutputStream outputStream;
+
+        public Client(Socket socket) {
+            this.socket = socket;
+            try {
+                outputStream = new DataOutputStream(socket.getOutputStream());
+            } catch (IOException e) {
+                // this is handled by the ClientHandler already
+            }
+        }
+
+        public Socket getSocket() {
+            return socket;
+        }
+
+        public void setId(int id) {
+            this.id = id;
+        }
+
+        public int getId(int id) {
+            return id;
+        }
+
+        public void update(Observable obs, Object clientUpdate) {
+            Set<Integer> affectedUsers = ((ClientUpdate) clientUpdate).affectedUsers;
+            String update = ((ClientUpdate) clientUpdate).update;
+            if (!affectedUsers.contains(this.id))
+                return;
+            try {
+                outputStream.writeChars(update);
+            } catch (Exception e) {
+                // this is handled by the ClientHandler already
+            }
+        }
+    }
+
+	private class ChatSession {
 		private List<String> chatLog = new ArrayList<>(); // all chat
         private Set<Integer> users = new HashSet<>(); // all users in the chat, including offline ones
 
         public void addMessage(String msg) {
             chatLog.add(msg);
-            setChanged();
-            notifyObservers();
+//            setChanged();
+//            notifyObservers();
         }
 
         public List<String> getMessages() {
@@ -195,7 +243,30 @@ public class MultiThreadServer extends Application {
             users.remove(userId);
             return true;
         }
+
+        public Set<Integer> getUsers() {
+            return users;
+        }
 	}
+
+	private class ChatState extends Observable {
+        private final Map<Integer, Set<Integer>> sessions = new HashMap<>();
+
+        public void triggerUpdate(int chatSession, String update) {
+            setChanged();
+            notifyObservers(new ClientUpdate(sessions.get(chatSession), update));
+        }
+    }
+
+    private class ClientUpdate {
+        Set<Integer> affectedUsers;
+        String update;
+
+        public ClientUpdate(Set<Integer> affectedUsers, String update) {
+            this.affectedUsers = affectedUsers;
+            this.update = update;
+        }
+    }
 	
 	public static void main(String[] args) {
 		launch(args);

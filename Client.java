@@ -32,7 +32,7 @@ import javafx.stage.Stage;
 public class Client extends Application {
 	// IO streams 
 	DataOutputStream toServer = null; 
-	DataInputStream fromServer = null;
+	BufferedReader fromServer = null;
     Thread recieve;
     ServerRecieve sa;
 	int clientId;
@@ -299,6 +299,7 @@ public class Client extends Application {
     //    waitForServer(ServerAction.STRANGERS);
 
         //TODO remove hardcode
+        /*
         //get online people / friends
         groups = new HashMap<>();
         groups.put(1,new Contact("Senior Design",true,this)); groups.put(2,new Contact("HackDFW",true,this)); groups.put(3,new Contact("Frist Allo",true,this));
@@ -310,6 +311,7 @@ public class Client extends Application {
 
         onlineStrangers = new HashMap<>();
         onlineStrangers.put("BruceBanner",new Contact("BruceBanner",false,this)); onlineStrangers.put("BilboBaggins",new Contact("BilboBaggins",false,this));
+        */
         //finish remove TODO
         Stage chatStage = new Stage();
 
@@ -332,23 +334,23 @@ public class Client extends Application {
         groupTitle.setLeft(groupLabelAlign);
         groupTitle.setRight(addGroupButton);
         friends.getChildren().add(groupTitle);
-        groupsView = new ContactList<>(groups.values());
+        groupsView = new ContactList<>();
         friends.getChildren().add(groupsView);
 
 
         Label onlineFriendsLabel = new Label("Online Friends");
         friends.getChildren().add(onlineFriendsLabel);
-        onlineFriendsView = new ContactList<>(onlineFriends.values());
+        onlineFriendsView = new ContactList<>();
         friends.getChildren().add(onlineFriendsView);
 
         Label offlineFriendsLabel = new Label("Offline Friends");
         friends.getChildren().add(offlineFriendsLabel);
-        offlineFriendsView = new ContactList<>(offlineFriends.values());
+        offlineFriendsView = new ContactList<>();
         friends.getChildren().add(offlineFriendsView);
 
         Label strangerLabel = new Label("Strangers");
         friends.getChildren().add(strangerLabel);
-        onlineStrangersView = new ContactList<>(onlineStrangers.values());
+        onlineStrangersView = new ContactList<>();
         friends.getChildren().add(onlineStrangersView);
 
         //Chat - Right
@@ -388,13 +390,13 @@ public class Client extends Application {
         chat.setBottom(sendMessageBox);
 
         //TODO REMOVE
-        chatPane.layoutBoundsProperty().addListener((observable, oldValue, newValue) -> {
-            System.out.println("h: "+newValue.getHeight()+" w: "+newValue.getWidth());
-        });
+//        chatPane.layoutBoundsProperty().addListener((observable, oldValue, newValue) -> {
+//            System.out.println("h: "+newValue.getHeight()+" w: "+newValue.getWidth());
+//        });
         //TODO REMOVE HARDCODE
-        onlineFriends.get(0).appendChat("[GRANT] Hey Anthony, can you ...");
-        onlineFriends.get(0).appendChat("[ANTHONY] What do you need Grant, id be happy to help!");
-
+//        onlineFriends.get(0).appendChat("[GRANT] Hey Anthony, can you ...");
+//        onlineFriends.get(0).appendChat("[ANTHONY] What do you need Grant, id be happy to help!");
+        System.out.println("blah");
 
         // Create a scene and place it in the stage
         Scene s = new Scene(chatPane,650,500);
@@ -414,7 +416,7 @@ public class Client extends Application {
 			Socket socket = new Socket(ip, 8000);
 
 			// Create an input stream to receive data from the server
-			fromServer = new DataInputStream(socket.getInputStream());
+			fromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
 			// Create an output stream to send data to the server
 			toServer = new DataOutputStream(socket.getOutputStream());
@@ -457,14 +459,15 @@ public class Client extends Application {
 
 	public void sendQuery(String q){
         try{
-            toServer.writeChars(q);
+            System.out.println(q);
+            toServer.writeUTF(q+'\n');
             toServer.flush();
         } catch (IOException ex){
             ex.printStackTrace();
         }
     }
 
-    boolean flags[] = new boolean[ServerAction.values().length];
+    volatile boolean flags[] = new boolean[ServerAction.values().length];
 
     public void prepWaitForServer(ServerAction sa){
         flags[sa.ordinal()] = true;
@@ -485,10 +488,10 @@ public class Client extends Application {
 
 class ServerRecieve implements Runnable {
 
-    DataInputStream fromServer;
+    BufferedReader fromServer;
     Client owner;
 
-    public ServerRecieve(Client c, DataInputStream fs){
+    public ServerRecieve(Client c, BufferedReader fs){
         owner = c;
         fromServer = fs;
     }
@@ -497,7 +500,9 @@ class ServerRecieve implements Runnable {
     public void run() {
         while(true){
             try {
-                String[] action = Parser.parseString(fromServer.readUTF());
+                String line = fromServer.readLine().trim();
+                System.out.println(line);
+                String[] action = Parser.parseString(line);
                 ServerAction sa = ServerAction.valueOf(action[0]);
                 owner.flags[sa.ordinal()]=false;    //set flag for blocking
                 List<String> messages;
