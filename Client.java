@@ -164,11 +164,6 @@ public class Client extends Application {
         currentBox.setSpacing(10);
         currentBox.setAlignment(Pos.CENTER);
 
-        Label currentLabel = new Label("Current Pass: ");
-        PasswordField currentField = new PasswordField();
-        addTextLimiter(currentField,15);
-        currentBox.getChildren().addAll(currentLabel,currentField);
-
         passBox.getChildren().add(currentBox);
 
         HBox newBox = new HBox();
@@ -187,7 +182,7 @@ public class Client extends Application {
 
         Button confirmButton = new Button("Confrim");
         confirmButton.setOnAction(e -> {
-            String query = Parser.packageStrings(ClientAction.UPDATEPASSWORD,currentField.getText(),newField.getText());
+            String query = Parser.packageStrings(ClientAction.UPDATEPASSWORD,newField.getText());
             sendQuery(query);
             passwordStage.close();
         });
@@ -682,13 +677,13 @@ class ContactList<E> extends ListView<E> {
     public void removeItem(E item){
         ArrayList<E> items = new ArrayList<>(getItems());
         items.remove(item);
-        setItems(FXCollections.observableArrayList(items));
+        Platform.runLater(() -> setItems(FXCollections.observableArrayList(items)));
     }
 
     public void addItem(E item){
         ArrayList<E> items = new ArrayList<>(getItems());
         items.add(item);
-        setItems(FXCollections.observableArrayList(items));
+        Platform.runLater(() -> setItems(FXCollections.observableArrayList(items)));
     }
 }
 

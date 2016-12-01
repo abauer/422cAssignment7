@@ -11,6 +11,7 @@
  */
 package assignment7;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -106,7 +107,7 @@ public class Contact extends BorderPane {
         if(!owner.currentChat.getText().equals(name.getText()))
             setUnread(true);
         else{
-            owner.chatMessages.setItems(FXCollections.observableList(chatHistory.stream().map(s->new Label(s)).collect(Collectors.toList())));
+            Platform.runLater(() -> owner.chatMessages.setItems(FXCollections.observableList(chatHistory.stream().map(s->new Label(s)).collect(Collectors.toList()))));
         }
 
     }
@@ -120,7 +121,7 @@ public class Contact extends BorderPane {
             setUnread(false);
         owner.currentChat.setText(name.getText());
         owner.currentContact = this;
-        owner.chatMessages.setItems(FXCollections.observableList(chatHistory.stream().map(s->new Label(s)).collect(Collectors.toList())));
+        Platform.runLater(()->owner.chatMessages.setItems(FXCollections.observableList(chatHistory.stream().map(s->new Label(s)).collect(Collectors.toList()))));
     }
 
     public void setFriend(boolean friend){
