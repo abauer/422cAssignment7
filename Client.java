@@ -395,8 +395,8 @@ public class Client extends Application {
         Button sendMessageButton = new Button("Send");
         sendMessageField.addEventFilter(KeyEvent.KEY_PRESSED, keyEvent -> {
             if(keyEvent.getCode()== KeyCode.ENTER){
-                submitMessage(sendMessageField.getText());
-                sendMessageField.setText("");
+                submitMessage(sendMessageField);
+
             }
         });
         sendMessageButton.setOnAction(event -> submitMessage(sendMessageField.getText()));
@@ -420,8 +420,9 @@ public class Client extends Application {
         chatStage.setOnCloseRequest(event -> System.exit(0));
     }
 
-    private void submitMessage(String message){
-        currentContact.submitMessage(message);
+    private void submitMessage(TextField message){
+        currentContact.submitMessage(message.getText());
+        message.setText("");
     }
 
 	private boolean connectToServer(String ip,Label statusLabel) {
