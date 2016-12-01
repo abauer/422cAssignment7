@@ -77,15 +77,6 @@ public class Contact extends BorderPane {
         setLeft(left);
         setRight(right);
         recompileHBox();
-
-//        getMessageHistory();
-    }
-
-    protected void getMessageHistory() {
-        owner.prepWaitForServer(ServerAction.MESSAGEHISTORY);
-        String query = Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,name.getText());
-        owner.sendQuery(query);
-        owner.waitForServer(ServerAction.MESSAGEHISTORY);
     }
 
     protected void setHandlers(){
@@ -186,13 +177,6 @@ class Group extends Contact{
     public Group(String name,int groupId, Client c) {
         super("[Group] "+name,true,c);
         this.groupId = groupId;
-    }
-
-    protected void getMessageHistory() {
-        owner.prepWaitForServer(ServerAction.GROUPMESSAGEHISTORY);
-        String query = Parser.packageStrings(ClientAction.GETGROUPMESSAGEHISTORY,groupId);
-        owner.sendQuery(query);
-        owner.waitForServer(ServerAction.GROUPMESSAGEHISTORY);
     }
 
     public void setFriend(boolean friend){
