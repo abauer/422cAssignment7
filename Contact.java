@@ -67,7 +67,7 @@ public class Contact extends BorderPane {
         setRight(right);
         recompileHBox();
 
-        getMessageHistory();
+//        getMessageHistory();
     }
 
     protected void getMessageHistory() {

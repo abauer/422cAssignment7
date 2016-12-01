@@ -529,9 +529,12 @@ class ServerRecieve implements Runnable {
                     case STRANGERS:
                         messages = new ArrayList<>(Arrays.asList(action));
                         messages.remove(0);   //ServerAction,
+                        System.out.println("ABOUT TO OUTPUT MESSAGES");
+                        messages.stream().forEachOrdered(System.out::println);
                         HashMap<String,Contact> strangers = new HashMap<>();
                         messages.forEach(s -> strangers.put(s, new Contact(s, true, owner)));
                         owner.updateContactList(owner.onlineStrangersView,strangers.values());
+                        strangers.values().stream().forEachOrdered(System.out::println);
                         strangers.forEach((s,c) -> owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,s)));
                         break;
                     case GROUPS:

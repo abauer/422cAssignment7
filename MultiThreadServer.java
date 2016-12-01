@@ -146,11 +146,10 @@ public class MultiThreadServer extends Application {
                             writeToClient(Parser.packageStrings(ServerAction.OFFLINEFRIENDS,responses));
                             break;
                         case GETSTRANGERS: //remove self (clientId)
-                            //TODO remove self, using list of sockets/clientids get strangers
                             responses = activeClients.stream()
                                     .filter(Client::isActive)
                                     .map(Client::getName)
-                                    //filter self
+                                    .filter(s -> s.equals(client.getName()))
                                     .collect(Collectors.toList());
                             System.out.println("***");
                             responses.stream().forEachOrdered(System.out::println);
