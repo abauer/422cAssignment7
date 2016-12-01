@@ -220,6 +220,9 @@ public class MultiThreadServer extends Application {
                             break;
                         case GETGROUPS:
                             responses = DatabaseServer.getGroups(clientId);
+                            for (int i=0; i<responses.size(); i+=2) {
+                                chatState.addGroupAssoc(clientId, Integer.parseInt(responses.get(i)));
+                            }
                             writeToClient(Parser.packageStrings(ServerAction.GROUPS,responses));
                             break;
 					}
@@ -294,37 +297,6 @@ public class MultiThreadServer extends Application {
         }
     }
 
-	private class ChatSession {
-		private List<String> chatLog = new ArrayList<>(); // all chat
-        private Set<Integer> users = new HashSet<>(); // all users in the chat, including offline ones
-
-        public void addMessage(String msg) {
-            chatLog.add(msg);
-//            setChanged();
-//            notifyObservers();
-        }
-
-        public List<String> getMessages() {
-            return chatLog;
-        }
-
-        public boolean addUser(int userId) {
-            if (users.contains(userId)) return false;
-            users.add(userId);
-            return true;
-        }
-
-        public boolean removeUser(int userId) {
-            if (!users.contains(userId)) return false;
-            users.remove(userId);
-            return true;
-        }
-
-        public Set<Integer> getUsers() {
-            return users;
-        }
-	}
-
 	private class ChatState extends Observable {
         private final Map<Integer, Set<Integer>> sessions = new HashMap<>();
 
@@ -340,6 +312,12 @@ public class MultiThreadServer extends Application {
 
         public void triggerUpdate(String username, String update) {
             notifyObservers(new ClientUpdate(username, update));
+        }
+
+        public void addGroupAssoc(int userId, int groupId) {
+            if (!sessions.containsKey(groupId))
+                sessions.put(groupId, new HashSet<>());
+            sessions.get(groupId).add(userId);
         }
     }
 
