@@ -399,7 +399,7 @@ public class Client extends Application {
 
             }
         });
-        sendMessageButton.setOnAction(event -> submitMessage(sendMessageField.getText()));
+        sendMessageButton.setOnAction(event -> submitMessage(sendMessageField));
         sendMessageBox.getChildren().addAll(sendMessageField,sendMessageButton);
         HBox.setHgrow(sendMessageField, Priority.ALWAYS);
         chat.setBottom(sendMessageBox);
