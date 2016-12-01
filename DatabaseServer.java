@@ -55,13 +55,13 @@ public class DatabaseServer {
         return DatabaseAccessor.strListQuery(params);
     }
 
-    public static int makeChat(int client,String groupName, List<String> friends){
+    public static List<Integer> makeChat(int client,String groupName, List<String> friends){
         Map<String,Object> params = new HashMap<>();
         params.put("type", "make_chat");
         params.put("clientid", client);
         params.put("groupname",groupName);
         params.put("groupmembers",friends.stream().collect(Collectors.joining(",")));
-        return DatabaseAccessor.intQuery(params);
+        return DatabaseAccessor.intListQuery(params);
     }
 
     public static List<String> addFriend(int client,String username){
