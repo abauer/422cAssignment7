@@ -298,18 +298,22 @@ public class Client extends Application {
         sendQuery(query);
     //    waitForServer(ServerAction.STRANGERS);
 
+        groups = new HashMap<>();
+        onlineFriends = new HashMap<>();
+        onlineStrangers = new HashMap<>();
+        offlineFriends = new HashMap<>();
         //TODO remove hardcode
         /*
         //get online people / friends
-        groups = new HashMap<>();
+
         groups.put(1,new Contact("Senior Design",true,this)); groups.put(2,new Contact("HackDFW",true,this)); groups.put(3,new Contact("Frist Allo",true,this));
 
-        onlineFriends = new HashMap<>();
+
         onlineFriends.put("Grant",new Contact("Grant",true,this));
-        offlineFriends = new HashMap<>();
+        o
         offlineFriends.put("Rony",new Contact("Rony",true,this));
 
-        onlineStrangers = new HashMap<>();
+
         onlineStrangers.put("BruceBanner",new Contact("BruceBanner",false,this)); onlineStrangers.put("BilboBaggins",new Contact("BilboBaggins",false,this));
         */
         //finish remove TODO
@@ -532,7 +536,7 @@ class ServerRecieve implements Runnable {
                         System.out.println("ABOUT TO OUTPUT MESSAGES");
                         messages.stream().forEachOrdered(System.out::println);
                         HashMap<String,Contact> strangers = new HashMap<>();
-                        messages.forEach(s -> strangers.put(s, new Contact(s, true, owner)));
+                        messages.forEach(s -> strangers.put(s, new Contact(s, false, owner)));
                         owner.updateContactList(owner.onlineStrangersView,strangers.values());
                         strangers.values().stream().forEachOrdered(System.out::println);
                         strangers.forEach((s,c) -> owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,s)));
@@ -555,13 +559,13 @@ class ServerRecieve implements Runnable {
                         messages = new ArrayList<>(Arrays.asList(action));
                         messages.remove(0); messages.remove(0);   //ServerAction, username
                         Contact c;
-                        if(owner.onlineFriends.get(action[1])!=null){
+                        if(owner.onlineFriends.containsKey(action[1])){
                             c = owner.onlineFriends.get(action[1]);
                             c.setChatHistory(messages);
-                        } else if(owner.offlineFriends.get(action[1])!=null){
+                        } else if(owner.offlineFriends.containsKey(action[1])){
                             c = owner.offlineFriends.get(action[1]);
                             c.setChatHistory(messages);
-                        } else if(owner.onlineStrangers.get(action[1])!=null){
+                        } else if(owner.onlineStrangers.containsKey(action[1])){
                             c = owner.onlineStrangers.get(action[1]);
                             c.setChatHistory(messages);
                         }
@@ -582,7 +586,7 @@ class ServerRecieve implements Runnable {
                     case FRIENDREMOVED:
                         HashMap<String,Contact> oldList,newList;
                         Contact oldFriend;
-                        if(owner.onlineFriends.get(action[1])!=null) {
+                        if(owner.onlineFriends.containsKey(action[1])) {
                             oldList = owner.onlineFriends;
                             newList = owner.onlineStrangers;
                         } else {
@@ -600,11 +604,11 @@ class ServerRecieve implements Runnable {
                         owner.groups.get(action[1]).appendChat(action[2]);
                         break;
                     case NEWMESSAGE:
-                        if(owner.onlineFriends.get(action[1])!=null){
+                        if(owner.onlineFriends.containsKey(action[1])){
                             owner.onlineFriends.get(action[1]).appendChat(action[2]);
-                        } else if(owner.offlineFriends.get(action[1])!=null){
+                        } else if(owner.offlineFriends.containsKey(action[1])){
                             owner.offlineFriends.get(action[1]).appendChat(action[2]);
-                        } else if(owner.onlineStrangers.get(action[1])!=null){
+                        } else if(owner.onlineStrangers.containsKey(action[1])){
                             owner.onlineStrangers.get(action[1]).appendChat(action[2]);
                         }
                         break;

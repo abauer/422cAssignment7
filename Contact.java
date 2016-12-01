@@ -161,7 +161,11 @@ public class Contact extends BorderPane {
     }
 
     @Override
-    public boolean equals(Object o) {return ((Contact)o).name.getText().equals(name.getText());}
+    public boolean equals(Object o) {
+        if(o instanceof Contact)
+            return ((Contact)o).name.getText().equals(name.getText());
+        return false;
+    }
 }
 
 class Group extends Contact{
