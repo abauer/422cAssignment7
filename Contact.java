@@ -104,7 +104,12 @@ public class Contact extends BorderPane {
 
     public void appendChat(String message){
         chatHistory.add(message);
-        if(!owner.currentChat.getText().equals(name.getText()))
+        System.out.println("adding message to chat: "+message);
+        System.out.println("current Contact:"+owner.currentContact);
+        System.out.println("my Contact:"+this);
+        if(owner.currentContact==null)
+            markUnread();
+        else if(!owner.currentChat.getText().equals(name.getText()))
             markUnread();
         else{
             Platform.runLater(() -> owner.chatMessages.setItems(FXCollections.observableList(chatHistory.stream().map(s->new Label(s)).collect(Collectors.toList()))));
@@ -127,16 +132,20 @@ public class Contact extends BorderPane {
         this.friend = friend;
         if(!friend){
             chatHistory = new ArrayList<>();
+            if(owner.currentContact.equals(this)){
+                owner.currentContact=null;
+                owner.currentChat.setText("");
+                Platform.runLater(()->owner.chatMessages.setItems(FXCollections.observableList(chatHistory.stream().map(s->new Label(s)).collect(Collectors.toList()))));
+            }
         }
         recompileHBox();
     }
 
-    public void markUnread(){
-        if(owner.currentContact!=null)
-            if(!owner.currentContact.equals(this)) {
-                this.unread = true;
-                recompileHBox();
-            }
+    public void markUnread() {
+        if (owner.currentContact == null || !owner.currentContact.equals(this)){
+            this.unread = true;
+            recompileHBox();
+        }
     }
 
     public void markRead(){
@@ -192,9 +201,9 @@ class Group extends Contact{
 
     public void setFriend(boolean friend){
         this.friend = friend;
-        if(!friend)
+        if(!friend) {
             leaveGroup();
-        //TODO CHANGE ARRAY
+        }
         recompileHBox();
     }
 
@@ -213,6 +222,10 @@ class Group extends Contact{
     }
 
     void leaveGroup(){
-
+        /*
+        owner.currentContact=null;
+        owner.currentChat.setText("");
+        Platform.runLater(()->owner.chatMessages.setItems(FXCollections.observableList(chatHistory.stream().map(s->new Label(s)).collect(Collectors.toList()))));
+        */
     }
 }

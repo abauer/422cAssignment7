@@ -18,6 +18,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -647,6 +648,17 @@ class ServerRecieve implements Runnable {
                             owner.onlineStrangers.remove(action[1]);
                             owner.updateContactList(owner.onlineStrangersView,owner.onlineStrangers.values());
                         }
+                        break;
+                    case GROUPADDED:
+                        groupId = Integer.parseInt(action[1]);
+                        Group g = new Group(action[2],groupId,owner);
+                        owner.groups.put(groupId,g);
+                        owner.updateContactList(owner.groupsView,owner.groups.values());
+                        break;
+                    case GROUPREMOVED:
+                        groupId = Integer.parseInt(action[1]);
+                        owner.groups.remove(groupId);
+                        owner.updateContactList(owner.groupsView,owner.groups.values());
                         break;
                 }
             }
