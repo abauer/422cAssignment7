@@ -105,7 +105,7 @@ public class Contact extends BorderPane {
     public void appendChat(String message){
         chatHistory.add(message);
         if(!owner.currentChat.getText().equals(name.getText()))
-            setUnread(true);
+            markUnread();
         else{
             Platform.runLater(() -> owner.chatMessages.setItems(FXCollections.observableList(chatHistory.stream().map(s->new Label(s)).collect(Collectors.toList()))));
         }
@@ -118,29 +118,39 @@ public class Contact extends BorderPane {
 
     public void setActiveChat(){
         owner.currentContact = this;
-        setUnread(false);
+        markRead();
         owner.currentChat.setText(this.toString());
         Platform.runLater(()->owner.chatMessages.setItems(FXCollections.observableList(chatHistory.stream().map(s->new Label(s)).collect(Collectors.toList()))));
     }
 
     public void setFriend(boolean friend){
         this.friend = friend;
+        if(!friend){
+            chatHistory = new ArrayList<>();
+        }
         recompileHBox();
     }
 
-    public void setUnread(boolean unread) {
+    public void markUnread(){
         if(owner.currentContact!=null)
-            if(!owner.currentContact.equals(this))
-                return;
-        this.unread = unread;
+            if(!owner.currentContact.equals(this)) {
+                this.unread = true;
+                recompileHBox();
+            }
+    }
+
+    public void markRead(){
+        this.unread = false;
         recompileHBox();
     }
 
     protected void recompileHBox() {
-        right.getChildren().clear();
-        left.getChildren().clear();
-        addFriend();
-        addUnread();
+        Platform.runLater(() -> {
+            right.getChildren().clear();
+            left.getChildren().clear();
+            addFriend();
+            addUnread();
+        });
     }
 
     protected void addUnread(){
