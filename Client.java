@@ -396,6 +396,7 @@ public class Client extends Application {
         sendMessageField.addEventFilter(KeyEvent.KEY_PRESSED, keyEvent -> {
             if(keyEvent.getCode()== KeyCode.ENTER){
                 submitMessage(sendMessageField.getText());
+                sendMessageField.setText("");
             }
         });
         sendMessageButton.setOnAction(event -> submitMessage(sendMessageField.getText()));
