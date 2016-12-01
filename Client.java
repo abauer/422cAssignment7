@@ -18,6 +18,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -460,6 +461,8 @@ public class Client extends Application {
 
             //wait for response
             waitForServer(ServerAction.LOGINSUCCESS);
+            System.out.println("LOGINSUCCESS RECEIVED");
+            System.out.println("clientid "+clientId);
             if(clientId==-1)
                 throw new IOException();
 
@@ -518,12 +521,12 @@ class ServerRecieve implements Runnable {
                 System.out.println(line);
                 String[] action = Parser.parseString(line);
                 ServerAction sa = ServerAction.valueOf(action[0]);
-                owner.flags[sa.ordinal()]=false;    //set flag for blocking
                 List<String> messages;
                 int groupId;
                 switch(sa){ //TODO ADD ALL SERVERACTIONS
                     case LOGINSUCCESS:
                         owner.clientId = Integer.parseInt(action[1]);
+                        System.out.println("set clientid to "+Integer.parseInt(action[1]));
                         break;
                     case FRIENDS:
                         messages = new ArrayList<>(Arrays.asList(action));
@@ -625,15 +628,17 @@ class ServerRecieve implements Runnable {
                         }
                         break;
                     case COMEONLINE:
-                        if(owner.offlineFriends.containsKey(action[1])){
-                            owner.onlineFriends.put(action[1],owner.offlineFriends.remove(action[1]));
-                            owner.updateContactList(owner.onlineFriendsView,owner.onlineFriends.values());
-                            owner.updateContactList(owner.offlineFriendsView,owner.offlineFriends.values());
-                            owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,action[1]));
-                        } else{
-                            owner.onlineStrangers.put(action[1],new Contact(action[1],false,owner));
-                            owner.updateContactList(owner.onlineStrangersView,owner.onlineStrangers.values());
-                            owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,action[1]));
+                        if(action[1]!=null){
+                            if(owner.offlineFriends.containsKey(action[1])){
+                                owner.onlineFriends.put(action[1],owner.offlineFriends.remove(action[1]));
+                                owner.updateContactList(owner.onlineFriendsView,owner.onlineFriends.values());
+                                owner.updateContactList(owner.offlineFriendsView,owner.offlineFriends.values());
+                                owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,action[1]));
+                            } else{
+                                owner.onlineStrangers.put(action[1],new Contact(action[1],false,owner));
+                                owner.updateContactList(owner.onlineStrangersView,owner.onlineStrangers.values());
+                                owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,action[1]));
+                            }
                         }
                         break;
                     case WENTOFFLINE:
@@ -658,6 +663,7 @@ class ServerRecieve implements Runnable {
                         owner.updateContactList(owner.groupsView,owner.groups.values());
                         break;
                 }
+                owner.flags[sa.ordinal()]=false;    //set flag for blocking
             }
             catch (IOException ex){
                 ex.printStackTrace();
