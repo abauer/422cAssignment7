@@ -117,10 +117,9 @@ public class Contact extends BorderPane {
     }
 
     public void setActiveChat(){
-        if(unread)
-            setUnread(false);
-        owner.currentChat.setText(name.getText());
         owner.currentContact = this;
+        setUnread(false);
+        owner.currentChat.setText(this.toString());
         Platform.runLater(()->owner.chatMessages.setItems(FXCollections.observableList(chatHistory.stream().map(s->new Label(s)).collect(Collectors.toList()))));
     }
 
@@ -130,7 +129,7 @@ public class Contact extends BorderPane {
     }
 
     public void setUnread(boolean unread) {
-        if(owner.currentContact.equals(this))
+        if(!owner.currentContact.equals(this))
             return;
         this.unread = unread;
         recompileHBox();
