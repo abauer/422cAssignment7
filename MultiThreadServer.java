@@ -200,11 +200,17 @@ public class MultiThreadServer extends Application {
                                     String msg = String.format("%s accepted %s's friend request.", client.getName(), action[1]);
                                     chatState.triggerUpdate(client.getName(), Parser.packageStrings(ServerAction.NEWMESSAGE, action[1], msg));
                                     chatState.triggerUpdate(action[1], Parser.packageStrings(ServerAction.NEWMESSAGE, client.getName(), msg));
+                                    chatState.triggerUpdate(client.getName(), Parser.packageStrings(ServerAction.FRIENDADDED, action[1]));
+                                    chatState.triggerUpdate(action[1], Parser.packageStrings(ServerAction.FRIENDADDED, client.getName()));
                                 }
                             }
                             break;
                         case REMOVEFRIEND:
                             result = DatabaseServer.removeFriend(clientId,action[1]);
+                            if (result > 0) {
+                                chatState.triggerUpdate(client.getName(), Parser.packageStrings(ServerAction.FRIENDREMOVED, action[1]));
+                                chatState.triggerUpdate(action[1], Parser.packageStrings(ServerAction.FRIENDREMOVED, client.getName()));
+                            }
                             break;
                         case GETMESSAGEHISTORY:
                             responses = DatabaseServer.getMessageHistory(clientId,action[1]);
@@ -216,7 +222,6 @@ public class MultiThreadServer extends Application {
                             break;
                         case LEAVEGROUP:
                             result = DatabaseServer.leaveGroup(clientId,Integer.parseInt(action[1]));
-                            //writeToClient(Parser.packageStrings(ServerAction.LEFTGROUP,result));
                             break;
                         case GETGROUPS:
                             responses = DatabaseServer.getGroups(clientId);
