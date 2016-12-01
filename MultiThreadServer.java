@@ -120,7 +120,8 @@ public class MultiThreadServer extends Application {
                     int result;
                     String response;
                     List<String> responses;
-					switch ((ClientAction.valueOf(action[0]))){
+                    Set<String> onlineUsers;
+                    switch ((ClientAction.valueOf(action[0]))){
                         case UPDATEPASSWORD:
                             result = DatabaseServer.updatePassword(clientId,action[1],action[2]);
                             //writeToClient(Parser.packageStrings(ServerAction.UPDATEPASSWORDRESULT,result));
@@ -136,20 +137,31 @@ public class MultiThreadServer extends Application {
                             break;
                         case GETFRIENDS:
                             responses = DatabaseServer.getFriends(clientId);
-                            //TODO confirm these friends are online
+                            onlineUsers = activeClients.stream()
+                                    .filter(Client::isActive)
+                                    .map(Client::getName)
+                                    .collect(Collectors.toSet());
+                            responses = responses.stream()
+                                    .filter(onlineUsers::contains)
+                                    .collect(Collectors.toList());
                             writeToClient(Parser.packageStrings(ServerAction.FRIENDS,responses));
                             break;
                         case GETOFFLINEFRIENDS:
                             responses = DatabaseServer.getFriends(clientId);
-                            //TODO Using list of sockets/clientids get offlinefriends
-                            //responses = new ArrayList<>();
+                            onlineUsers = activeClients.stream()
+                                    .filter(Client::isActive)
+                                    .map(Client::getName)
+                                    .collect(Collectors.toSet());
+                            responses = responses.stream()
+                                    .filter(s -> !onlineUsers.contains(s))
+                                    .collect(Collectors.toList());
                             writeToClient(Parser.packageStrings(ServerAction.OFFLINEFRIENDS,responses));
                             break;
                         case GETSTRANGERS: //remove self (clientId)
                             responses = activeClients.stream()
                                     .filter(Client::isActive)
                                     .map(Client::getName)
-                                    .filter(s -> s.equals(client.getName()))
+                                    .filter(s -> !s.equals(client.getName()))
                                     .collect(Collectors.toList());
                             System.out.println("***");
                             responses.stream().forEachOrdered(System.out::println);
