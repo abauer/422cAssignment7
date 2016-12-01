@@ -100,7 +100,8 @@ public class MultiThreadServer extends Application {
         }
 
 		/** Run a thread */
-		public void run() { 
+		public void run() {
+            String name = "";
 			try {
 				// Create data input and output streams
 				BufferedReader inputFromClient = new BufferedReader(new InputStreamReader( client.getSocket().getInputStream()));
@@ -108,18 +109,18 @@ public class MultiThreadServer extends Application {
                 // Wait for username/password
                 int clientId = -1;
                 while (clientId == -1) {
-                    System.out.println("Starting loop");
                     String line = inputFromClient.readLine().trim();
-                    System.out.println(line);
                     String[] login = Parser.parseString(line);
-                    System.out.println(Arrays.toString(login));
+                    name = login[1];
                     switch(ClientAction.valueOf(login[0])) {
 						case LOGIN: clientId = DatabaseServer.login(login[1], login[2]); break;
 						case REGISTER: clientId = DatabaseServer.register(login[1], login[2]); break;
 					}
                     writeToClient(Parser.packageStrings(ServerAction.LOGINSUCCESS,clientId));
                     client.setId(clientId);
-                    client.setName(login[1]);
+                    client.setName(name);
+                    chatState.triggerUpdate(Parser.packageStrings(ServerAction.COMEONLINE,login[1]));
+                    chatState.addObserver(client);
                     //TODO update list of people online
                     //TODO update all other sockets with this list
                 }
@@ -175,10 +176,6 @@ public class MultiThreadServer extends Application {
                                     .map(Client::getName)
                                     .filter(s -> !s.equals(client.getName()))
                                     .collect(Collectors.toList());
-                            System.out.println("***");
-                            responses.stream().forEachOrdered(System.out::println);
-                            System.out.println("****");
-                            System.out.println(Parser.packageStrings(ServerAction.STRANGERS,responses));
                             writeToClient(Parser.packageStrings(ServerAction.STRANGERS,responses));
                             break;
                         case MAKECHAT:
@@ -189,6 +186,10 @@ public class MultiThreadServer extends Application {
                             break;
                         case ADDFRIEND:
                             result = DatabaseServer.addFriend(clientId,action[1]);
+                            if (result == 1) {
+                                String msg = String.format("%s sent %s a friend request.", client.getName(), action[1]);
+                                chatState.triggerUpdate(Parser.packageStrings(ServerAction.NEWMESSAGE, msg));
+                            }
                             //writeToClient(Parser.packageStrings(ServerAction.FRIENDADDED,result));
                             break;
                         case REMOVEFRIEND:
@@ -217,6 +218,8 @@ public class MultiThreadServer extends Application {
 			} catch(IOException e) {
                 synchronized (activeClients) {
                     activeClients.remove(client);
+                    chatState.deleteObserver(client);
+                    chatState.triggerUpdate(Parser.packageStrings(ServerAction.WENTOFFLINE,name));
                     //TODO update list of people online
                     //TODO update all other sockets with this list
                 }
@@ -266,12 +269,12 @@ public class MultiThreadServer extends Application {
         public void update(Observable obs, Object clientUpdate) {
             Set<Integer> affectedUsers = ((ClientUpdate) clientUpdate).affectedUsers;
             String update = ((ClientUpdate) clientUpdate).update;
-            if (!affectedUsers.contains(this.id))
+            if (affectedUsers != null && !affectedUsers.contains(this.id))
                 return;
             try {
-                outputStream.writeUTF(update);
+                outputStream.writeUTF(update+'\n');
             } catch (Exception e) {
-                // this is handled by the ClientHandler already
+                e.printStackTrace();
             }
         }
     }
@@ -312,7 +315,13 @@ public class MultiThreadServer extends Application {
 
         public void triggerUpdate(int chatSession, String update) {
             setChanged();
-            notifyObservers(new ClientUpdate(sessions.get(chatSession), update));
+            Set<Integer> affectedUsers = (chatSession == 0) ? null : sessions.get(chatSession);
+            notifyObservers(new ClientUpdate(affectedUsers, update));
+        }
+
+        public void triggerUpdate(String update) {
+            System.out.println("***"+update);
+            triggerUpdate(0, update);
         }
     }
 
