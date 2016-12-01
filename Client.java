@@ -2,11 +2,11 @@ package assignment7;
 
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -46,13 +46,13 @@ public class Client extends Application {
     Contact currentContact;
     ListView<Label> chatMessages;
 
-    ArrayList<Contact> groups;
+    HashMap<Integer,Contact> groups;
     ContactList<Contact> groupsView;
-    ArrayList<Contact> onlineFriends;
+    List<Contact> onlineFriends;
     ContactList<Contact> onlineFriendsView;
-    ArrayList<Contact> offlineFriends;
+    List<Contact> offlineFriends;
     ContactList<Contact> offlineFriendsView;
-    ArrayList<Contact> onlineStrangers;
+    List<Contact> onlineStrangers;
     ContactList<Contact> onlineStrangersView;
 
 
@@ -113,7 +113,7 @@ public class Client extends Application {
 			boolean success = connectToServer(ipField.getText(),statusLabel);
 			if(!success)
 				return;
-			success = loginToServer(ClientAction.REGISTER,Parser.cleanString(usernameField.getText()),passwordField.getText());
+			success = loginToServer(ClientAction.REGISTER,Parser.cleanString(usernameField.getText()),passwordField.getText(),statusLabel);
             if(!success)
                 return;
             openChat();
@@ -124,7 +124,7 @@ public class Client extends Application {
 	//		boolean success = connectToServer(ipField.getText(),statusLabel);
 	//		if(!success)
 	//			return;
-	//		success = loginToServer(ClientAction.LOGIN,Parser.cleanString(usernameField.getText()),passwordField.getText());
+	//		success = loginToServer(ClientAction.LOGIN,Parser.cleanString(usernameField.getText()),passwordField.getText(),statusLabel);
     //      if(!success)
     //          return;
             openChat();
@@ -283,30 +283,30 @@ public class Client extends Application {
 
 	private void openChat(){
 
-        prepWaitForServer(ServerAction.GROUPS);
+    //    prepWaitForServer(ServerAction.GROUPS);
         String query = Parser.packageStrings(ClientAction.GETGROUPS);
         sendQuery(query);
-        waitForServer(ServerAction.GROUPS);
+    //    waitForServer(ServerAction.GROUPS);
 
-        prepWaitForServer(ServerAction.FRIENDS);
+    //    prepWaitForServer(ServerAction.FRIENDS);
         query = Parser.packageStrings(ClientAction.GETFRIENDS);
         sendQuery(query);
-        waitForServer(ServerAction.FRIENDS);
+    //    waitForServer(ServerAction.FRIENDS);
 
-        prepWaitForServer(ServerAction.OFFLINEFRIENDS);
+    //    prepWaitForServer(ServerAction.OFFLINEFRIENDS);
         query = Parser.packageStrings(ClientAction.GETOFFLINEFRIENDS);
         sendQuery(query);
-        waitForServer(ServerAction.OFFLINEFRIENDS);
+    //    waitForServer(ServerAction.OFFLINEFRIENDS);
 
-        prepWaitForServer(ServerAction.STRANGERS);
+    //    prepWaitForServer(ServerAction.STRANGERS);
         query = Parser.packageStrings(ClientAction.GETSTRANGERS);
         sendQuery(query);
-        waitForServer(ServerAction.STRANGERS);
+    //    waitForServer(ServerAction.STRANGERS);
 
         //TODO create contacts in the serverresponse handler
         //get online people / friends
-        groups = new ArrayList<>();
-        groups.add(new Contact("Senior Design",true,this)); groups.add(new Contact("HackDFW",true,this)); groups.add(new Contact("Frist Allo",true,this));
+        groups = new HashMap<>();
+        groups.put(1,new Contact("Senior Design",true,this)); groups.put(2,new Contact("HackDFW",true,this)); groups.put(3,new Contact("Frist Allo",true,this));
 
         onlineFriends = new ArrayList<>();
         onlineFriends.add(new Contact("Grant",true,this));
@@ -337,7 +337,7 @@ public class Client extends Application {
         groupTitle.setLeft(groupLabelAlign);
         groupTitle.setRight(addGroupButton);
         friends.getChildren().add(groupTitle);
-        groupsView = new ContactList<>(groups);
+        groupsView = new ContactList<>(new ArrayList(groups.values()));
         friends.getChildren().add(groupsView);
 
 
@@ -432,24 +432,30 @@ public class Client extends Application {
 		return true;
 	}
 
-	private boolean loginToServer(ClientAction clientaction,String user, String pass){
+	private boolean loginToServer(ClientAction clientaction,String user, String pass,Label statusLabel){
 		try {
-			// create query
-			String query = Parser.packageStrings(clientaction,user,pass);
-			//send server register
-			sendQuery(query);
 
-			//wait for response
-			clientId = fromServer.readInt();
-            if(clientId==-1)
-                return false;
-            //setup new Thread to recieve from Server
+            //setup new Thread to receive from Server
             sa = new ServerRecieve(this,fromServer);
             recieve = new Thread(sa);
             recieve.start();
+
+            prepWaitForServer(ServerAction.LOGINSUCCESS);
+
+            // create query
+            String query = Parser.packageStrings(clientaction,user,pass);
+            //send server register
+			sendQuery(query);
+
+            //wait for response
+            waitForServer(ServerAction.LOGINSUCCESS);
+            if(clientId==-1)
+                throw new IOException();
+
             return true;
 		} catch (IOException ex){
-			ex.printStackTrace();
+            statusLabel.setText("Status: Failed");
+            statusLabel.setTextFill(Color.FIREBRICK);
 		}
 		return false;
 	}
@@ -476,6 +482,10 @@ public class Client extends Application {
 	public static void main(String[] args) {
 		launch(args);
 	}
+
+    public void updateContactList(ContactList<Contact> contactList, Collection<Contact> contacts) {
+        contactList.setList(contacts);
+    }
 }
 
 class ServerRecieve implements Runnable {
@@ -492,15 +502,79 @@ class ServerRecieve implements Runnable {
     public void run() {
         while(true){
             try {
-                String server_response = fromServer.readUTF();
-                //TODO PARSE fromServer and get ServerAction perfromed
-                ServerAction sa = ServerAction.GROUPS;  //EXAMPLE
+                String[] action = Parser.parseString(fromServer.readUTF());
+                ServerAction sa = ServerAction.valueOf(action[0]);
                 owner.flags[sa.ordinal()]=false;    //set flag for blocking
-                //parse server response
+                List<String> messages;
+                int groupId;
                 switch(sa){  //TODO
-                    case GROUPS:
+                    case LOGINSUCCESS:
+                        owner.clientId = Integer.parseInt(action[1]);
                         break;
+                    case FRIENDADDED:
+                    case FRIENDREMOVED: //TODO check w/grant if server already sends us this information
+                        owner.sendQuery(Parser.packageStrings(ClientAction.GETFRIENDS));
+                        owner.sendQuery(Parser.packageStrings(ClientAction.GETSTRANGERS));
+                        break;
+                    case FRIENDS:
+                        messages = Arrays.asList(action);
+                        messages.remove(0);   //ServerAction,
+                        owner.onlineFriends=messages.stream().map(s -> new Contact(s,true,owner)).collect(Collectors.toList());
+                        owner.updateContactList(owner.onlineFriendsView,owner.onlineFriends);
+                        //TODO GET MESSAGE HISTORY
+                        break;
+                    case OFFLINEFRIENDS:
+                        messages = Arrays.asList(action);
+                        messages.remove(0);   //ServerAction,
+                        owner.offlineFriends=messages.stream().map(s -> new Contact(s,true,owner)).collect(Collectors.toList());
+                        owner.updateContactList(owner.offlineFriendsView,owner.offlineFriends);
+                        //TODO GET MESSAGE HISTORY
+                        break;
+                    case STRANGERS:
+                        messages = Arrays.asList(action);
+                        messages.remove(0);   //ServerAction,
+                        owner.onlineStrangers=messages.stream().map(s -> new Contact(s,false,owner)).collect(Collectors.toList());
+                        owner.updateContactList(owner.onlineStrangersView,owner.onlineStrangers);
+                        //TODO GET MESSAGE HISTORY
+                        break;
+                    case GROUPS:
+                        messages = Arrays.asList(action);
+                        messages.remove(0);   //ServerAction,
+                        HashMap<Integer,Contact> groups = new HashMap<>();
+                        for (int i = 0; i<messages.size(); i+=2) {
+                            groupId = Integer.parseInt(messages.get(i+1));
+                            groups.put(groupId,new Group(messages.get(i),groupId,owner));
+                        }
+                        owner.groups = groups;
+                        owner.updateContactList(owner.groupsView,owner.groups.values());
+                        //TODO GET MESSAGE HISTORY
+                        break;
+                    case GROUPMESSAGESENT: //TODO check w/grant if server already sends us this information
+                        owner.sendQuery(Parser.packageStrings(ClientAction.GETGROUPMESSAGEHISTORY,action[1]));
+                        break;
+                    case LEFTGROUP: //TODO check w/grant if server already sends us this information
+                    case MAKEGROUP:
+                        owner.sendQuery(Parser.packageStrings(ClientAction.GETGROUPS));
+                        break;
+                    case MESSAGEHISTORY:
+                        messages = Arrays.asList(action);
+                        messages.remove(0); messages.remove(0);   //ServerAction, username
+                        //action[1] is username
+                        //TODO find user, add message
+                        break;
+                    case MESSAGESENT: //TODO check w/grant if server already sends us this information
+                        owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,action[1]));
+                        break;
+
+
+                    case UPDATEPASSWORDRESULT:
+                        break;
+
                     case GROUPMESSAGEHISTORY:
+                        groupId = Integer.parseInt(action[1]);
+                        messages = Arrays.asList(action);
+                        messages.remove(0); messages.remove(0);   //ServerAction, groupId
+                        owner.groups.get(groupId).setChatHistory(messages);
                         break;
                 }
             }
@@ -523,6 +597,10 @@ class ContactList<E> extends ListView<E> {
 
     public ContactList(List<E> items){
         this();
+        setList(items);
+    }
+
+    public void setList(Collection<E> items){
         setItems(FXCollections.observableArrayList(items));
     }
 

@@ -124,6 +124,8 @@ public class Contact extends BorderPane {
     }
 
     public void setUnread(boolean unread) {
+        if(owner.currentContact.equals(this))
+            return;
         this.unread = unread;
         recompileHBox();
     }
@@ -154,6 +156,9 @@ public class Contact extends BorderPane {
     public String toString(){
         return name.getText();
     }
+
+    @Override
+    public boolean equals(Object o) {return ((Contact)o).name.getText().equals(name.getText());}
 }
 
 class Group extends Contact{
@@ -161,7 +166,7 @@ class Group extends Contact{
     int groupId;
 
     public Group(String name,int groupId, Client c) {
-        super(name,true,c);
+        super("[Group] "+name,true,c);
         this.groupId = groupId;
     }
 
