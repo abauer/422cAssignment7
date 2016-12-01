@@ -628,9 +628,11 @@ class ServerRecieve implements Runnable {
                             owner.onlineFriends.put(action[1],owner.offlineFriends.remove(action[1]));
                             owner.updateContactList(owner.onlineFriendsView,owner.onlineFriends.values());
                             owner.updateContactList(owner.offlineFriendsView,owner.offlineFriends.values());
+                            owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,action[1]));
                         } else{
                             owner.onlineStrangers.put(action[1],new Contact(action[1],false,owner));
                             owner.updateContactList(owner.onlineStrangersView,owner.onlineStrangers.values());
+                            owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,action[1]));
                         }
                         break;
                     case WENTOFFLINE:
