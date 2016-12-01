@@ -129,8 +129,9 @@ public class Contact extends BorderPane {
     }
 
     public void setUnread(boolean unread) {
-        if(!owner.currentContact.equals(this))
-            return;
+        if(owner.currentContact!=null)
+            if(!owner.currentContact.equals(this))
+                return;
         this.unread = unread;
         recompileHBox();
     }
