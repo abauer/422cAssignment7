@@ -99,10 +99,14 @@ public class Contact extends BorderPane {
         owner.sendQuery(query);
     }
 
-    public void appendChat(String s){
+    public void appendChat(String message){
+        chatHistory.add(message);
         if(!owner.currentChat.getText().equals(name.getText()))
             setUnread(true);
-        chatHistory.add(s);
+        else{
+            owner.chatMessages.setItems(FXCollections.observableList(chatHistory.stream().map(s->new Label(s)).collect(Collectors.toList())));
+        }
+
     }
 
     public void setChatHistory(List<String> s){
@@ -119,7 +123,6 @@ public class Contact extends BorderPane {
 
     public void setFriend(boolean friend){
         this.friend = friend;
-        //TODO CHANGE ARRAY
         recompileHBox();
     }
 

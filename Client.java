@@ -298,7 +298,7 @@ public class Client extends Application {
         sendQuery(query);
     //    waitForServer(ServerAction.STRANGERS);
 
-        //TODO create contacts in the serverresponse handler
+        //TODO remove hardcode
         //get online people / friends
         groups = new HashMap<>();
         groups.put(1,new Contact("Senior Design",true,this)); groups.put(2,new Contact("HackDFW",true,this)); groups.put(3,new Contact("Frist Allo",true,this));
@@ -502,7 +502,7 @@ class ServerRecieve implements Runnable {
                 owner.flags[sa.ordinal()]=false;    //set flag for blocking
                 List<String> messages;
                 int groupId;
-                switch(sa){  //TODO
+                switch(sa){ //TODO ADD ALL SERVERACTIONS
                     case LOGINSUCCESS:
                         owner.clientId = Integer.parseInt(action[1]);
                         break;
@@ -545,14 +545,51 @@ class ServerRecieve implements Runnable {
                     case MESSAGEHISTORY:
                         messages = Arrays.asList(action);
                         messages.remove(0); messages.remove(0);   //ServerAction, username
-                        //action[1] is username
-                        //TODO find user, add message
+                        Contact c;
+                        if(owner.onlineFriends.get(action[1])!=null){
+                            c = owner.onlineFriends.get(action[1]);
+                            c.setChatHistory(messages);
+                        } else if(owner.offlineFriends.get(action[1])!=null){
+                            c = owner.offlineFriends.get(action[1]);
+                            c.setChatHistory(messages);
+                        } else if(owner.onlineStrangers.get(action[1])!=null){
+                            c = owner.onlineStrangers.get(action[1]);
+                            c.setChatHistory(messages);
+                        }
                         break;
                     case GROUPMESSAGEHISTORY:
                         groupId = Integer.parseInt(action[1]);
                         messages = Arrays.asList(action);
                         messages.remove(0); messages.remove(0);   //ServerAction, groupId
                         owner.groups.get(groupId).setChatHistory(messages);
+                        break;
+                    case FRIENDADDED:
+                        Contact newFriend = owner.onlineStrangers.remove(action[1]);
+                        newFriend.setFriend(true);
+                        owner.onlineFriends.put(action[1],newFriend);
+                        owner.updateContactList(owner.onlineFriendsView,owner.onlineFriends.values());
+                        owner.updateContactList(owner.onlineStrangersView,owner.onlineStrangers.values());
+                        break;
+                    case FRIENDREMOVED:
+                        HashMap<String,Contact> oldList,newList;
+                        Contact oldFriend;
+                        if(owner.onlineFriends.get(action[1])!=null) {
+                            oldList = owner.onlineFriends;
+                            newList = owner.onlineStrangers;
+                        } else {
+                            oldList = owner.offlineFriends;
+                            newList = new HashMap<>();
+                        }
+                        oldFriend = oldList.remove(action[1]);
+                        oldFriend.setFriend(false);
+                        newList.put(action[1],oldFriend);
+                        owner.updateContactList(owner.onlineFriendsView,owner.onlineFriends.values());
+                        owner.updateContactList(owner.offlineFriendsView,owner.offlineFriends.values());
+                        owner.updateContactList(owner.onlineStrangersView,owner.onlineStrangers.values());
+                        break;
+                    case NEWGROUPMESSAGE:
+                    case NEWMESSAGE:
+                        owner.groups.get(action[1]).appendChat(action[2]);
                         break;
                 }
             }
