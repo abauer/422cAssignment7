@@ -132,10 +132,12 @@ public class Contact extends BorderPane {
         this.friend = friend;
         if(!friend){
             chatHistory = new ArrayList<>();
-            if(owner.currentContact.equals(this)){
+            if(owner.currentContact!=null&&owner.currentContact.equals(this)){
                 owner.currentContact=null;
-                owner.currentChat.setText("");
-                Platform.runLater(()->owner.chatMessages.setItems(FXCollections.observableList(chatHistory.stream().map(s->new Label(s)).collect(Collectors.toList()))));
+                Platform.runLater(()->{
+                    owner.currentChat.setText("");
+                    owner.chatMessages.setItems(FXCollections.observableList(chatHistory.stream().map(s->new Label(s)).collect(Collectors.toList())));
+                });
             }
         }
         recompileHBox();

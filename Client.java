@@ -196,7 +196,6 @@ public class Client extends Application {
         passwordStage.setTitle("Change Password"); // Set the stage title
         passwordStage.setScene(scene); // Place the scene in the stage
         passwordStage.show(); // Display the stage
-        passwordStage.setOnCloseRequest(event -> System.exit(0));
     }
 
 	private void openAddGroup(){
@@ -263,7 +262,6 @@ public class Client extends Application {
         groupStage.setTitle("Create Group"); // Set the stage title
         groupStage.setScene(scene); // Place the scene in the stage
         groupStage.show(); // Display the stage
-        groupStage.setOnCloseRequest(event -> System.exit(0));
     }
 
     private void swapLists(ContactList<Contact> first, ContactList<Contact> second){
@@ -562,8 +560,8 @@ class ServerRecieve implements Runnable {
                         messages.remove(0);   //ServerAction,
                         HashMap<Integer,Contact> groups = new HashMap<>();
                         for (int i = 0; i<messages.size(); i+=2) {
-                            groupId = Integer.parseInt(messages.get(i+1));
-                            groups.put(groupId,new Group(messages.get(i),groupId,owner));
+                            groupId = Integer.parseInt(messages.get(i));
+                            groups.put(groupId,new Group(messages.get(i+1),groupId,owner));
                         }
                         owner.groups = groups;
                         owner.updateContactList(owner.groupsView,owner.groups.values());
@@ -615,7 +613,7 @@ class ServerRecieve implements Runnable {
                         owner.updateContactList(owner.onlineStrangersView,owner.onlineStrangers.values());
                         break;
                     case NEWGROUPMESSAGE:
-                        owner.groups.get(action[1]).appendChat(action[2]);
+                        owner.groups.get(Integer.parseInt(action[1])).appendChat(action[2]);
                         break;
                     case NEWMESSAGE:
                         if(owner.onlineFriends.containsKey(action[1])){
