@@ -136,7 +136,7 @@ public class Client extends Application {
 		loginStage.setTitle("Login"); // Set the stage title
 		loginStage.setScene(scene); // Place the scene in the stage
 		loginStage.show(); // Display the stage
-        loginStage.setOnCloseRequest(event -> Platform.exit());
+        loginStage.setOnCloseRequest(event -> System.exit(0));
 	}
 
 	private void openPassword(){
@@ -189,7 +189,7 @@ public class Client extends Application {
         passwordStage.setTitle("Change Password"); // Set the stage title
         passwordStage.setScene(scene); // Place the scene in the stage
         passwordStage.show(); // Display the stage
-        passwordStage.setOnCloseRequest(event -> Platform.exit());
+        passwordStage.setOnCloseRequest(event -> System.exit(0));
     }
 
 	private void openAddGroup(){
@@ -256,7 +256,7 @@ public class Client extends Application {
         groupStage.setTitle("Create Group"); // Set the stage title
         groupStage.setScene(scene); // Place the scene in the stage
         groupStage.show(); // Display the stage
-        groupStage.setOnCloseRequest(event -> Platform.exit());
+        groupStage.setOnCloseRequest(event -> System.exit(0));
     }
 
     private void swapLists(ContactList<Contact> first, ContactList<Contact> second){
@@ -409,7 +409,7 @@ public class Client extends Application {
         chatStage.setTitle("Chat Window"); // Set the stage title
         chatStage.setScene(s); // Place the scene in the stage
         chatStage.show(); // Display the stage
-        chatStage.setOnCloseRequest(event -> Platform.exit());
+        chatStage.setOnCloseRequest(event -> System.exit(0));
     }
 
     private void submitMessage(String message){
