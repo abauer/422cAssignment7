@@ -115,13 +115,13 @@ public class Client extends Application {
 			loginStage.close();
 		});
 		Button loginButton = new Button("Login");
-		loginButton.setOnAction(e -> {  //TODO UNCOMMENT
-	//		boolean success = connectToServer(ipField.getText(),statusLabel);
-	//		if(!success)
-	//			return;
-	//		success = loginToServer(ClientAction.LOGIN,Parser.cleanString(usernameField.getText()),passwordField.getText(),statusLabel);
-    //      if(!success)
-    //          return;
+		loginButton.setOnAction(e -> {
+			boolean success = connectToServer(ipField.getText(),statusLabel);
+			if(!success)
+				return;
+			success = loginToServer(ClientAction.LOGIN,Parser.cleanString(usernameField.getText()),passwordField.getText(),statusLabel);
+            if(!success)
+                return;
             openChat();
 			loginStage.close();
 		});
