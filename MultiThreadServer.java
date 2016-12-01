@@ -140,17 +140,19 @@ public class MultiThreadServer extends Application {
                     Set<String> onlineUsers;
                     switch ((ClientAction.valueOf(action[0]))){
                         case UPDATEPASSWORD:
-                            result = DatabaseServer.updatePassword(clientId,action[1],action[2]);
-                            //writeToClient(Parser.packageStrings(ServerAction.UPDATEPASSWORDRESULT,result));
+                            result = DatabaseServer.updatePassword(clientId,action[1]);
                             break;
                         case SENDGROUPMESSAGE:
                             result = DatabaseServer.sendGroupMessage(clientId,Integer.parseInt(action[1]),action[2]);
-                            //writeToClient(Parser.packageStrings(ServerAction.GROUPMESSAGESENT,result));
                             break;
                         case SENDMESSAGE:
                             result = DatabaseServer.sendMessage(clientId,action[1],action[2]);
-                            chatState.triggerUpdate(result, Parser.packageStrings(ServerAction.NEWMESSAGE, action[1], action[2]));
-                            //writeToClient(Parser.packageStrings(ServerAction.MESSAGESENT,result));
+                            // TODO fix
+                            if (result > 0) {
+                                String msg = String.format("[%s]: %s", client.getName(), action[2]);
+                                chatState.triggerUpdate(client.getName(), Parser.packageStrings(ServerAction.NEWMESSAGE, action[1], msg));
+                                chatState.triggerUpdate(action[1], Parser.packageStrings(ServerAction.NEWMESSAGE, client.getName(), msg));
+                            }
                             break;
                         case GETFRIENDS:
                             responses = DatabaseServer.getFriends(clientId);
@@ -186,26 +188,23 @@ public class MultiThreadServer extends Application {
                             List<String> members = new ArrayList<>(Arrays.asList(action));
                             members.remove(0); members.remove(0);   //ClientAction, groupName
                             result = DatabaseServer.makeChat(clientId,action[1],members);
-                            //writeToClient(Parser.packageStrings(ServerAction.MAKEGROUP,result));
                             break;
                         case ADDFRIEND:
                             responses = DatabaseServer.addFriend(clientId,action[1]);
                             if (responses.size() > 1) {
                                 if (responses.get(0).equals("1")) {
-                                    String msg = String.format("%s sent %s a friend request.", client.getName().toUpperCase(), action[1].toUpperCase());
+                                    String msg = String.format("%s sent %s a friend request.", client.getName(), action[1]);
                                     chatState.triggerUpdate(client.getName(), Parser.packageStrings(ServerAction.NEWMESSAGE, action[1], msg));
                                     chatState.triggerUpdate(action[1], Parser.packageStrings(ServerAction.NEWMESSAGE, client.getName(), msg));
                                 } else if (responses.get(0).equals("2")) {
-                                    String msg = String.format("%s accepted %s's friend request.", client.getName().toUpperCase(), action[1].toUpperCase());
+                                    String msg = String.format("%s accepted %s's friend request.", client.getName(), action[1]);
                                     chatState.triggerUpdate(client.getName(), Parser.packageStrings(ServerAction.NEWMESSAGE, action[1], msg));
                                     chatState.triggerUpdate(action[1], Parser.packageStrings(ServerAction.NEWMESSAGE, client.getName(), msg));
                                 }
                             }
-                            //writeToClient(Parser.packageStrings(ServerAction.FRIENDADDED,result));
                             break;
                         case REMOVEFRIEND:
                             result = DatabaseServer.removeFriend(clientId,action[1]);
-                            //writeToClient(Parser.packageStrings(ServerAction.FRIENDREMOVED,result));
                             break;
                         case GETMESSAGEHISTORY:
                             responses = DatabaseServer.getMessageHistory(clientId,action[1]);
@@ -288,6 +287,7 @@ public class MultiThreadServer extends Application {
                     (affectedUsers != null && affectedUsers.contains(this.id)) ||
                     (name != null && name.equals(this.name))) {
                 try {
+                    System.out.println(update);
                     outputStream.write(update);
                     outputStream.newLine();
                     outputStream.flush();
@@ -302,8 +302,8 @@ public class MultiThreadServer extends Application {
         private final Map<Integer, Set<Integer>> sessions = new HashMap<>();
 
         public void triggerUpdate(int chatSession, String update) {
-            setChanged();
             Set<Integer> affectedUsers = (chatSession == 0) ? null : sessions.get(chatSession);
+            setChanged();
             notifyObservers(new ClientUpdate(affectedUsers, update));
         }
 
@@ -312,6 +312,7 @@ public class MultiThreadServer extends Application {
         }
 
         public void triggerUpdate(String username, String update) {
+            setChanged();
             notifyObservers(new ClientUpdate(username, update));
         }
 

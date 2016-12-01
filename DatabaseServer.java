@@ -22,11 +22,10 @@ public class DatabaseServer {
         return DatabaseAccessor.intQuery(params);
     }
 
-    public static int updatePassword(int client, String current, String newPassword){
+    public static int updatePassword(int client, String newPassword){
         Map<String,Object> params = new HashMap<>();
         params.put("type", "update_password");
         params.put("clientid", client);
-        params.put("oldpassword", current);
         params.put("newpassword", newPassword);
         return DatabaseAccessor.intQuery(params);
     }
