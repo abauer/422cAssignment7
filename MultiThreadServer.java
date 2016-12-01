@@ -29,7 +29,8 @@ public class MultiThreadServer extends Application {
 		Scene scene = new Scene(new ScrollPane(ta), 450, 200); 
 		primaryStage.setTitle("MultiThreadServer"); // Set the stage title 
 		primaryStage.setScene(scene); // Place the scene in the stage 
-		primaryStage.show(); // Display the stage 
+		primaryStage.show(); // Display the stage
+        primaryStage.setOnCloseRequest(event -> Platform.exit());
 
 		new Thread( () -> { 
 			try {  // Create a server socket
