@@ -73,17 +73,26 @@ public class MultiThreadServer extends Application {
 	// Define the thread class for handling
 	private class ClientHandler implements Runnable {
 		private Client client; // contains socket
+        private DataOutputStream outputToClient;
 		/** Construct a thread */ 
 		public ClientHandler(Client client) {
 			this.client = client;
 		}
+		
+		private void writeToClient(String s) {
+            try {
+                outputToClient.writeUTF(s+"\n");
+            } catch (Exception e) {
+                //TODO handle exception
+            }
+        }
 
 		/** Run a thread */
 		public void run() { 
 			try {
 				// Create data input and output streams
 				BufferedReader inputFromClient = new BufferedReader(new InputStreamReader( client.getSocket().getInputStream()));
-				DataOutputStream outputToClient = new DataOutputStream( client.getSocket().getOutputStream());
+				outputToClient = new DataOutputStream( client.getSocket().getOutputStream());
                 // Wait for username/password
                 int clientId = -1;
                 while (clientId == -1) {
@@ -96,7 +105,7 @@ public class MultiThreadServer extends Application {
 						case LOGIN: clientId = DatabaseServer.login(login[1], login[2]); break;
 						case REGISTER: clientId = DatabaseServer.register(login[1], login[2]); break;
 					}
-                    outputToClient.writeUTF(Parser.packageStrings(ServerAction.LOGINSUCCESS,clientId)+'\n');
+                    writeToClient(Parser.packageStrings(ServerAction.LOGINSUCCESS,clientId));
                     client.setId(clientId);
                     client.setName(login[1]);
                     //TODO update list of people online
@@ -114,27 +123,27 @@ public class MultiThreadServer extends Application {
 					switch ((ClientAction.valueOf(action[0]))){
                         case UPDATEPASSWORD:
                             result = DatabaseServer.updatePassword(clientId,action[1],action[2]);
-                            //outputToClient.writeUTF(Parser.packageStrings(ServerAction.UPDATEPASSWORDRESULT,result));
+                            //writeToClient(Parser.packageStrings(ServerAction.UPDATEPASSWORDRESULT,result));
                             break;
                         case SENDGROUPMESSAGE:
                             result = DatabaseServer.sendGroupMessage(clientId,Integer.parseInt(action[1]),action[2]);
-                            //outputToClient.writeUTF(Parser.packageStrings(ServerAction.GROUPMESSAGESENT,result));
+                            //writeToClient(Parser.packageStrings(ServerAction.GROUPMESSAGESENT,result));
                             break;
                         case SENDMESSAGE:
                             result = DatabaseServer.sendMessage(clientId,action[1],action[2]);
                             chatState.triggerUpdate(result, Parser.packageStrings(ServerAction.NEWMESSAGE, action[1], action[2]));
-                            //outputToClient.writeUTF(Parser.packageStrings(ServerAction.MESSAGESENT,result));
+                            //writeToClient(Parser.packageStrings(ServerAction.MESSAGESENT,result));
                             break;
                         case GETFRIENDS:
                             responses = DatabaseServer.getFriends(clientId);
                             //TODO confirm these friends are online
-                            outputToClient.writeUTF(Parser.packageStrings(ServerAction.FRIENDS,responses));
+                            writeToClient(Parser.packageStrings(ServerAction.FRIENDS,responses));
                             break;
                         case GETOFFLINEFRIENDS:
                             responses = DatabaseServer.getFriends(clientId);
                             //TODO Using list of sockets/clientids get offlinefriends
                             //responses = new ArrayList<>();
-                            outputToClient.writeUTF(Parser.packageStrings(ServerAction.OFFLINEFRIENDS,responses));
+                            writeToClient(Parser.packageStrings(ServerAction.OFFLINEFRIENDS,responses));
                             break;
                         case GETSTRANGERS: //remove self (clientId)
                             //TODO remove self, using list of sockets/clientids get strangers
@@ -143,38 +152,41 @@ public class MultiThreadServer extends Application {
                                     .map(Client::getName)
                                     //filter self
                                     .collect(Collectors.toList());
+                            System.out.println("***");
                             responses.stream().forEachOrdered(System.out::println);
-                            outputToClient.writeUTF(Parser.packageStrings(ServerAction.STRANGERS,responses));
+                            System.out.println("****");
+                            System.out.println(Parser.packageStrings(ServerAction.STRANGERS,responses));
+                            writeToClient(Parser.packageStrings(ServerAction.STRANGERS,responses));
                             break;
                         case MAKECHAT:
                             List<String> members = new ArrayList<>(Arrays.asList(action));
                             members.remove(0); members.remove(0);   //ClientAction, groupName
                             result = DatabaseServer.makeChat(clientId,action[1],members);
-                            //outputToClient.writeUTF(Parser.packageStrings(ServerAction.MAKEGROUP,result));
+                            //writeToClient(Parser.packageStrings(ServerAction.MAKEGROUP,result));
                             break;
                         case ADDFRIEND:
                             result = DatabaseServer.addFriend(clientId,action[1]);
-                            //outputToClient.writeUTF(Parser.packageStrings(ServerAction.FRIENDADDED,result));
+                            //writeToClient(Parser.packageStrings(ServerAction.FRIENDADDED,result));
                             break;
                         case REMOVEFRIEND:
                             result = DatabaseServer.removeFriend(clientId,action[1]);
-                            //outputToClient.writeUTF(Parser.packageStrings(ServerAction.FRIENDREMOVED,result));
+                            //writeToClient(Parser.packageStrings(ServerAction.FRIENDREMOVED,result));
                             break;
                         case GETMESSAGEHISTORY:
                             responses = DatabaseServer.getMessageHistory(clientId,action[1]);
-                            outputToClient.writeUTF(Parser.packageStrings(ServerAction.MESSAGEHISTORY,action[1],responses));
+                            writeToClient(Parser.packageStrings(ServerAction.MESSAGEHISTORY,action[1],responses));
                             break;
                         case GETGROUPMESSAGEHISTORY:
                             responses = DatabaseServer.getGroupMessageHistory(clientId,Integer.parseInt(action[1]));
-                            outputToClient.writeUTF(Parser.packageStrings(ServerAction.GROUPMESSAGEHISTORY,action[1],responses));
+                            writeToClient(Parser.packageStrings(ServerAction.GROUPMESSAGEHISTORY,action[1],responses));
                             break;
                         case LEAVEGROUP:
                             result = DatabaseServer.leaveGroup(clientId,Integer.parseInt(action[1]));
-                            //outputToClient.writeUTF(Parser.packageStrings(ServerAction.LEFTGROUP,result));
+                            //writeToClient(Parser.packageStrings(ServerAction.LEFTGROUP,result));
                             break;
                         case GETGROUPS:
                             responses = DatabaseServer.getGroups(clientId);
-                            outputToClient.writeUTF(Parser.packageStrings(ServerAction.GROUPS,responses));
+                            writeToClient(Parser.packageStrings(ServerAction.GROUPS,responses));
                             break;
 					}
 					//outputToClient.writeDouble(area);

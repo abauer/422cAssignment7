@@ -396,7 +396,6 @@ public class Client extends Application {
         //TODO REMOVE HARDCODE
 //        onlineFriends.get(0).appendChat("[GRANT] Hey Anthony, can you ...");
 //        onlineFriends.get(0).appendChat("[ANTHONY] What do you need Grant, id be happy to help!");
-        System.out.println("blah");
 
         // Create a scene and place it in the stage
         Scene s = new Scene(chatPane,650,500);
