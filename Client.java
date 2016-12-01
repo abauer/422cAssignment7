@@ -512,7 +512,7 @@ class ServerRecieve implements Runnable {
                         owner.clientId = Integer.parseInt(action[1]);
                         break;
                     case FRIENDS:
-                        messages = Arrays.asList(action);
+                        messages = new ArrayList<>(Arrays.asList(action));
                         messages.remove(0);   //ServerAction,
                         HashMap<String,Contact> friends = new HashMap<>();
                         messages.forEach(s -> friends.put(s, new Contact(s, true, owner)));
@@ -520,7 +520,7 @@ class ServerRecieve implements Runnable {
                         friends.forEach((s,c) -> owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,s)));
                         break;
                     case OFFLINEFRIENDS:
-                        messages = Arrays.asList(action);
+                        messages = new ArrayList<>(Arrays.asList(action));
                         messages.remove(0);   //ServerAction,
                         HashMap<String,Contact> offlineFriends = new HashMap<>();
                         messages.forEach(s -> offlineFriends.put(s, new Contact(s, true, owner)));
@@ -528,7 +528,7 @@ class ServerRecieve implements Runnable {
                         offlineFriends.forEach((s,c) -> owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,s)));
                         break;
                     case STRANGERS:
-                        messages = Arrays.asList(action);
+                        messages = new ArrayList<>(Arrays.asList(action));
                         messages.remove(0);   //ServerAction,
                         HashMap<String,Contact> strangers = new HashMap<>();
                         messages.forEach(s -> strangers.put(s, new Contact(s, true, owner)));
@@ -536,8 +536,10 @@ class ServerRecieve implements Runnable {
                         strangers.forEach((s,c) -> owner.sendQuery(Parser.packageStrings(ClientAction.GETMESSAGEHISTORY,s)));
                         break;
                     case GROUPS:
-                        messages = Arrays.asList(action);
+                        messages = new ArrayList<>(Arrays.asList(action));
+                        messages.stream().forEachOrdered(System.out::println);
                         messages.remove(0);   //ServerAction,
+                        System.out.println(messages.size());
                         HashMap<Integer,Contact> groups = new HashMap<>();
                         for (int i = 0; i<messages.size(); i+=2) {
                             groupId = Integer.parseInt(messages.get(i+1));
@@ -548,7 +550,7 @@ class ServerRecieve implements Runnable {
                         groups.forEach((i,c) -> owner.sendQuery(Parser.packageStrings(ClientAction.GETGROUPMESSAGEHISTORY,i)));
                         break;
                     case MESSAGEHISTORY:
-                        messages = Arrays.asList(action);
+                        messages = new ArrayList<>(Arrays.asList(action));
                         messages.remove(0); messages.remove(0);   //ServerAction, username
                         Contact c;
                         if(owner.onlineFriends.get(action[1])!=null){
@@ -564,7 +566,7 @@ class ServerRecieve implements Runnable {
                         break;
                     case GROUPMESSAGEHISTORY:
                         groupId = Integer.parseInt(action[1]);
-                        messages = Arrays.asList(action);
+                        messages = new ArrayList<>(Arrays.asList(action));
                         messages.remove(0); messages.remove(0);   //ServerAction, groupId
                         owner.groups.get(groupId).setChatHistory(messages);
                         break;

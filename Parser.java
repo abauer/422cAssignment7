@@ -12,6 +12,7 @@ public class Parser {
 
     public static String packageStrings(List<Object> list) {
         return list.stream()
+                .map(o -> ((o instanceof List) ? ((List)o).stream().collect(Collectors.joining(",")) : o))
                 .map(Object::toString)
                 .map(Parser::escapeString)
                 .collect(Collectors.joining(" "));
