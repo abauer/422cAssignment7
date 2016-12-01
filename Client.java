@@ -607,6 +607,26 @@ class ServerRecieve implements Runnable {
                             owner.onlineStrangers.get(action[1]).appendChat(action[2]);
                         }
                         break;
+                    case COMEONLINE:
+                        if(owner.offlineFriends.containsKey(action[1])){
+                            owner.onlineFriends.put(action[1],owner.offlineFriends.remove(action[1]));
+                            owner.updateContactList(owner.onlineFriendsView,owner.onlineFriends.values());
+                            owner.updateContactList(owner.offlineFriendsView,owner.offlineFriends.values());
+                        } else{
+                            owner.onlineStrangers.put(action[1],new Contact(action[1],false,owner));
+                            owner.updateContactList(owner.onlineStrangersView,owner.onlineStrangers.values());
+                        }
+                        break;
+                    case WENTOFFLINE:
+                        if(owner.onlineFriends.containsKey(action[1])){
+                            owner.offlineFriends.put(action[1],owner.onlineFriends.remove(action[1]));
+                            owner.updateContactList(owner.onlineFriendsView,owner.onlineFriends.values());
+                            owner.updateContactList(owner.offlineFriendsView,owner.offlineFriends.values());
+                        } else{
+                            owner.onlineStrangers.remove(action[1]);
+                            owner.updateContactList(owner.onlineStrangersView,owner.onlineStrangers.values());
+                        }
+                        break;
                 }
             }
             catch (IOException ex){
