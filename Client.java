@@ -43,7 +43,7 @@ import javafx.stage.Stage;
 
 public class Client extends Application {
 	// IO streams 
-	DataOutputStream toServer = null; 
+	BufferedWriter toServer = null;
 	BufferedReader fromServer = null;
     Thread recieve;
     ServerRecieve sa;
@@ -438,7 +438,7 @@ public class Client extends Application {
 			fromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
 			// Create an output stream to send data to the server
-			toServer = new DataOutputStream(socket.getOutputStream());
+			toServer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 		}
 		catch (IOException ex) {
 			statusLabel.setText("Status: Failed");
@@ -479,7 +479,7 @@ public class Client extends Application {
 	public void sendQuery(String q){
         try{
             System.out.println(q);
-            toServer.writeUTF(q+'\n');
+            toServer.write(q+'\n');
             toServer.flush();
         } catch (IOException ex){
             ex.printStackTrace();

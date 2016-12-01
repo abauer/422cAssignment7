@@ -65,12 +65,12 @@ public class DatabaseServer {
         return DatabaseAccessor.intQuery(params);
     }
 
-    public static int addFriend(int client,String username){
+    public static String addFriend(int client,String username){
         Map<String,Object> params = new HashMap<>();
         params.put("type", "add_friend");
         params.put("clientid", client);
         params.put("username", username);
-        return DatabaseAccessor.intQuery(params);
+        return DatabaseAccessor.strQuery(params);
     }
 
     public static int removeFriend(int client,String username){

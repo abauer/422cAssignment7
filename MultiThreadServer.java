@@ -85,7 +85,7 @@ public class MultiThreadServer extends Application {
 	// Define the thread class for handling
 	private class ClientHandler implements Runnable {
 		private Client client; // contains socket
-        private DataOutputStream outputToClient;
+        private BufferedWriter outputToClient;
 		/** Construct a thread */ 
 		public ClientHandler(Client client) {
 			this.client = client;
@@ -93,7 +93,10 @@ public class MultiThreadServer extends Application {
 		
 		private void writeToClient(String s) {
             try {
-                outputToClient.writeUTF(s+"\n");
+                System.out.println(s);
+                outputToClient.write(s);
+                outputToClient.newLine();
+                outputToClient.flush();
             } catch (Exception e) {
                 //TODO handle exception
             }
@@ -105,7 +108,7 @@ public class MultiThreadServer extends Application {
 			try {
 				// Create data input and output streams
 				BufferedReader inputFromClient = new BufferedReader(new InputStreamReader( client.getSocket().getInputStream()));
-				outputToClient = new DataOutputStream( client.getSocket().getOutputStream());
+				outputToClient = new BufferedWriter(new OutputStreamWriter(client.getSocket().getOutputStream()));
                 // Wait for username/password
                 int clientId = -1;
                 while (clientId == -1) {
@@ -133,6 +136,7 @@ public class MultiThreadServer extends Application {
                     int result;
                     String response;
                     List<String> responses;
+                    String[] tokens;
                     Set<String> onlineUsers;
                     switch ((ClientAction.valueOf(action[0]))){
                         case UPDATEPASSWORD:
@@ -185,10 +189,16 @@ public class MultiThreadServer extends Application {
                             //writeToClient(Parser.packageStrings(ServerAction.MAKEGROUP,result));
                             break;
                         case ADDFRIEND:
-                            result = DatabaseServer.addFriend(clientId,action[1]);
-                            if (result == 1) {
-                                String msg = String.format("%s sent %s a friend request.", client.getName(), action[1]);
-                                chatState.triggerUpdate(Parser.packageStrings(ServerAction.NEWMESSAGE, msg));
+                            response = DatabaseServer.addFriend(clientId,action[1]);
+                            tokens = Parser.parseString(response);
+                            if (tokens[0].equals("1")) {
+                                String msg = String.format("%s sent %s a friend request.", client.getName().toUpperCase(), action[1].toUpperCase());
+                                chatState.triggerUpdate(client.getName(), Parser.packageStrings(ServerAction.NEWMESSAGE, action[1], msg));
+                                chatState.triggerUpdate(action[1], Parser.packageStrings(ServerAction.NEWMESSAGE, client.getName(), msg));
+                            } else if (tokens[0].equals("2")) {
+                                String msg = String.format("%s accepted %s's friend request.", client.getName().toUpperCase(), action[1].toUpperCase());
+                                chatState.triggerUpdate(client.getName(), Parser.packageStrings(ServerAction.NEWMESSAGE, action[1], msg));
+                                chatState.triggerUpdate(action[1], Parser.packageStrings(ServerAction.NEWMESSAGE, client.getName(), msg));
                             }
                             //writeToClient(Parser.packageStrings(ServerAction.FRIENDADDED,result));
                             break;
@@ -231,12 +241,12 @@ public class MultiThreadServer extends Application {
         private int id = 0;
         private String name = null;
         private Socket socket;
-        DataOutputStream outputStream;
+        private BufferedWriter outputStream;
 
         public Client(Socket socket) {
             this.socket = socket;
             try {
-                outputStream = new DataOutputStream(socket.getOutputStream());
+                outputStream = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             } catch (IOException e) {
                 // this is handled by the ClientHandler already
             }
@@ -268,13 +278,18 @@ public class MultiThreadServer extends Application {
 
         public void update(Observable obs, Object clientUpdate) {
             Set<Integer> affectedUsers = ((ClientUpdate) clientUpdate).affectedUsers;
+            String name = ((ClientUpdate) clientUpdate).name;
             String update = ((ClientUpdate) clientUpdate).update;
-            if (affectedUsers != null && !affectedUsers.contains(this.id))
-                return;
-            try {
-                outputStream.writeUTF(update+'\n');
-            } catch (Exception e) {
-                e.printStackTrace();
+            if ((affectedUsers == null && name == null) ||
+                    (affectedUsers != null && affectedUsers.contains(this.id)) ||
+                    (name != null && name.equals(this.name))) {
+                try {
+                    outputStream.write(update);
+                    outputStream.newLine();
+                    outputStream.flush();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -320,17 +335,26 @@ public class MultiThreadServer extends Application {
         }
 
         public void triggerUpdate(String update) {
-            System.out.println("***"+update);
             triggerUpdate(0, update);
+        }
+
+        public void triggerUpdate(String username, String update) {
+            notifyObservers(new ClientUpdate(username, update));
         }
     }
 
     private class ClientUpdate {
         Set<Integer> affectedUsers;
         String update;
+        String name;
 
         public ClientUpdate(Set<Integer> affectedUsers, String update) {
             this.affectedUsers = affectedUsers;
+            this.update = update;
+        }
+
+        public ClientUpdate(String name, String update) {
+            this.name = name;
             this.update = update;
         }
     }
