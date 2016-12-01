@@ -588,8 +588,16 @@ class ServerRecieve implements Runnable {
                         owner.updateContactList(owner.onlineStrangersView,owner.onlineStrangers.values());
                         break;
                     case NEWGROUPMESSAGE:
-                    case NEWMESSAGE:
                         owner.groups.get(action[1]).appendChat(action[2]);
+                        break;
+                    case NEWMESSAGE:
+                        if(owner.onlineFriends.get(action[1])!=null){
+                            owner.onlineFriends.get(action[1]).appendChat(action[2]);
+                        } else if(owner.offlineFriends.get(action[1])!=null){
+                            owner.offlineFriends.get(action[1]).appendChat(action[2]);
+                        } else if(owner.onlineStrangers.get(action[1])!=null){
+                            owner.onlineStrangers.get(action[1]).appendChat(action[2]);
+                        }
                         break;
                 }
             }
