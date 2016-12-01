@@ -144,7 +144,12 @@ public class MultiThreadServer extends Application {
                             result = DatabaseServer.updatePassword(clientId,action[1]);
                             break;
                         case SENDGROUPMESSAGE:
-                            result = DatabaseServer.sendGroupMessage(clientId,Integer.parseInt(action[1]),action[2]);
+                            groupId = Integer.parseInt(action[1]);
+                            result = DatabaseServer.sendGroupMessage(clientId,groupId,action[2]);
+                            if (result > 0) {
+                                String msg = String.format("[%s]: %s", client.getName(), action[2]);
+                                chatState.triggerUpdate(groupId, Parser.packageStrings(ServerAction.NEWGROUPMESSAGE, groupId, msg));
+                            }
                             break;
                         case SENDMESSAGE:
                             result = DatabaseServer.sendMessage(clientId,action[1],action[2]);
@@ -188,12 +193,15 @@ public class MultiThreadServer extends Application {
                         case MAKECHAT:
                             List<String> members = new ArrayList<>(Arrays.asList(action));
                             members.remove(0); members.remove(0);   //ClientAction, groupName
+                            members.add(client.getName());
                             results = DatabaseServer.makeChat(clientId,action[1],members);
-                            groupId = results.get(0); // TODO fix
-                            // add everyone to the group
-                            results.subList(0, results.size()).forEach(id -> chatState.addGroupAssoc(id, groupId));
-                            chatState.triggerUpdate(groupId, Parser.packageStrings(ServerAction.GROUPADDED, groupId, action[1]));
-                            chatState.triggerUpdate(groupId, Parser.packageStrings(ServerAction.NEWGROUPMESSAGE, groupId, client.getName()+" created the group."));
+                            if (results.size() > 1) {
+                                groupId = results.get(0); // TODO fix
+                                // add everyone to the group
+                                results.subList(0, results.size()).forEach(id -> chatState.addGroupAssoc(id, groupId));
+                                chatState.triggerUpdate(groupId, Parser.packageStrings(ServerAction.GROUPADDED, groupId, action[1]));
+                                chatState.triggerUpdate(groupId, Parser.packageStrings(ServerAction.NEWGROUPMESSAGE, groupId, client.getName() + " created the group."));
+                            }
                             break;
                         case ADDFRIEND:
                             responses = DatabaseServer.addFriend(clientId,action[1]);
@@ -229,7 +237,7 @@ public class MultiThreadServer extends Application {
                         case LEAVEGROUP:
                             groupId = Integer.parseInt(action[1]);
                             result = DatabaseServer.leaveGroup(clientId,groupId);
-                            if (result > 1) {
+                            if (result > 0) {
                                 chatState.triggerUpdate(groupId, Parser.packageStrings(ServerAction.NEWGROUPMESSAGE, groupId, client.getName()+" left the group."));
                                 chatState.triggerUpdate(client.getName(), Parser.packageStrings(ServerAction.GROUPREMOVED, groupId));
                                 chatState.removeGroupAssoc(clientId, groupId);
