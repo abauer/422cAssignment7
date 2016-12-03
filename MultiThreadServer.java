@@ -46,7 +46,13 @@ public class MultiThreadServer extends Application {
 		new Thread( () -> { 
 			try {  // Create a server socket
 				ServerSocket serverSocket = new ServerSocket(8000);
-				ta.appendText("MultiThreadServer started at IP " + Inet4Address.getLocalHost().getHostAddress() + '\n');
+                Platform.runLater(() -> {
+                    try {
+                        ta.appendText("MultiThreadServer started at IP " + Inet4Address.getLocalHost().getHostAddress() + '\n');
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
 
 				while (true) { 
 					// Listen for a new connection request
